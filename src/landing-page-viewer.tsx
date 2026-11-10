@@ -437,8 +437,12 @@ export function LandingPageViewer({
     ((link as { link_type?: string }).link_type || "").toLowerCase();
   const isWhitehatLink =
     normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2";
+  // Chrome on iOS is already an external browser. Run the normal same-tab flow.
+  const alreadyInChrome = typeof navigator !== "undefined" &&
+    /\bCriOS\//i.test(navigator.userAgent) && !isInAppBrowser() && !isInstagramInAppBrowser();
   const shouldEscapeInAppBrowser =
     !isPreview &&
+    !alreadyInChrome &&
     (isWhitehatLink || isInAppBrowser()) &&
     (isWhitehatLink || (link as any).enable_deeplink !== false) &&
     (!isWhitehatLink || isMobileBrowser());

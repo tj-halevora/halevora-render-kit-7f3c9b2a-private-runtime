@@ -1141,7 +1141,8 @@ function LandingPageViewer({
   };
   const normalizedLinkType = (link.link_type || "").toLowerCase();
   const isWhitehatLink = normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2";
-  const shouldEscapeInAppBrowser = !isPreview && (isWhitehatLink || isInAppBrowser()) && (isWhitehatLink || link.enable_deeplink !== false) && (!isWhitehatLink || isMobileBrowser());
+  const alreadyInChrome = typeof navigator !== "undefined" && /\bCriOS\//i.test(navigator.userAgent) && !isInAppBrowser() && !isInstagramInAppBrowser();
+  const shouldEscapeInAppBrowser = !isPreview && !alreadyInChrome && (isWhitehatLink || isInAppBrowser()) && (isWhitehatLink || link.enable_deeplink !== false) && (!isWhitehatLink || isMobileBrowser());
   const buildDeepLinkUrl = (absoluteUrl) => {
     if (typeof window === "undefined") return null;
     const ua = navigator.userAgent || "";
