@@ -920,6 +920,7 @@ function LandingPageViewer({
   link,
   settings,
   onButtonClick,
+  onNavigate,
   isPreview = false,
   isFreePlan = false,
   visitorLocationLabel = null
@@ -1102,7 +1103,8 @@ function LandingPageViewer({
   };
   const normalizedLinkType = (link.link_type || "").toLowerCase();
   const isWhitehatLink = normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2";
-  const shouldEscapeInAppBrowser = !isPreview && (isWhitehatLink || isInAppBrowser()) && (isWhitehatLink || link.enable_deeplink !== false) && (!isWhitehatLink || isMobileBrowser());
+  const alreadyInChrome = typeof navigator !== "undefined" && /\bCriOS\//i.test(navigator.userAgent) && !isInAppBrowser() && !isInstagramInAppBrowser();
+  const shouldEscapeInAppBrowser = !isPreview && !alreadyInChrome && (isWhitehatLink || isInAppBrowser()) && (isWhitehatLink || link.enable_deeplink !== false) && (!isWhitehatLink || isMobileBrowser());
   const buildDeepLinkUrl = (absoluteUrl) => {
     if (typeof window === "undefined") return null;
     const ua = navigator.userAgent || "";
@@ -1214,6 +1216,7 @@ function LandingPageViewer({
         return;
       }
     }
+    if (!isPreview && fromUserGesture && (onNavigate == null ? void 0 : onNavigate(absoluteUrl))) return;
     window.location.href = absoluteUrl;
   };
   const getNavigationTargets = (url) => {
@@ -1246,7 +1249,7 @@ function LandingPageViewer({
         if (onButtonClick) {
           onButtonClick();
         }
-        if (attemptExternalOpen()) {
+        if (attemptExternalOpen() || !isPreview && (onNavigate == null ? void 0 : onNavigate(absoluteUrl))) {
           event.preventDefault();
         }
       }
@@ -1855,6 +1858,12 @@ function LandingPageViewer({
                                   {
                                     as: "a",
                                     href: (_a2 = social.url) != null ? _a2 : "",
+                                    onClick: (event) => {
+                                      var _a3;
+                                      if (!isPreview && (onNavigate == null ? void 0 : onNavigate((_a3 = social.url) != null ? _a3 : ""))) {
+                                        event.preventDefault();
+                                      }
+                                    },
                                     target: "_blank",
                                     rel: "noopener noreferrer",
                                     isIconOnly: true,

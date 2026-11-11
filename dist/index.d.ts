@@ -139,11 +139,13 @@ interface LandingPageViewerProps {
     link: Link;
     settings: LandingPageSettings;
     onButtonClick?: () => void;
+    /** Return true when the host handles navigation without leaving this page. */
+    onNavigate?: (url: string) => boolean;
     isPreview?: boolean;
     isFreePlan?: boolean;
     visitorLocationLabel?: string | null;
 }
-declare function LandingPageViewer({ link, settings, onButtonClick, isPreview, isFreePlan, visitorLocationLabel, }: LandingPageViewerProps): react_jsx_runtime.JSX.Element;
+declare function LandingPageViewer({ link, settings, onButtonClick, onNavigate, isPreview, isFreePlan, visitorLocationLabel, }: LandingPageViewerProps): react_jsx_runtime.JSX.Element;
 
 interface ModernAudioPlayerProps {
     src: string;
