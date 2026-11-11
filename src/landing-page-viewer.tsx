@@ -39,6 +39,8 @@ interface LandingPageViewerProps {
   link: Link;
   settings: LandingPageSettings;
   onButtonClick?: () => void;
+  /** Return true when the host handles navigation without leaving this page. */
+  onNavigate?: (url: string) => boolean;
   isPreview?: boolean; 
   isFreePlan?: boolean; 
   visitorLocationLabel?: string | null;
@@ -198,6 +200,7 @@ export function LandingPageViewer({
   link,
   settings,
   onButtonClick,
+  onNavigate,
   isPreview = false,
   isFreePlan = false,
   visitorLocationLabel = null,
@@ -583,6 +586,8 @@ export function LandingPageViewer({
       }
     }
 
+    if (!isPreview && fromUserGesture && onNavigate?.(absoluteUrl)) return;
+
     window.location.href = absoluteUrl;
   };
 
@@ -624,7 +629,7 @@ export function LandingPageViewer({
           onButtonClick();
         }
 
-        if (attemptExternalOpen()) {
+        if (attemptExternalOpen() || (!isPreview && onNavigate?.(absoluteUrl))) {
           event.preventDefault();
         }
       },
@@ -1317,6 +1322,11 @@ useEffect(() => {
                                 key={index}
                                 as="a"
                                 href={social.url ?? ""}
+                                onClick={(event) => {
+                                  if (!isPreview && onNavigate?.(social.url ?? "")) {
+                                    event.preventDefault();
+                                  }
+                                }}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 isIconOnly
