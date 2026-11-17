@@ -968,6 +968,7 @@ function LandingPageViewer({
   onButtonClick,
   onNavigate,
   onCtaActivate,
+  pageFooter,
   browserHandoff = "existing",
   isPreview = false,
   isFreePlan = false,
@@ -1703,7 +1704,7 @@ function LandingPageViewer({
               /* @__PURE__ */ jsx10(
                 "div",
                 {
-                  className: "flex-1 flex flex-col items-center px-4 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-[calc(5rem+env(safe-area-inset-bottom))] md:px-8 md:pb-16 relative z-10",
+                  className: `flex-1 flex flex-col items-center px-4 sm:px-6 md:px-8 relative z-10 ${pageFooter ? "pb-6" : "pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-16"}`,
                   style: {
                     marginTop: isFullMode ? "0" : "0",
                     transform: contentVerticalOffset ? `translateY(${contentVerticalOffset}px)` : void 0
@@ -2612,7 +2613,8 @@ function LandingPageViewer({
                     )
                   ] }) })
                 }
-              )
+              ),
+              pageFooter
             ]
           }
         )
@@ -2824,9 +2826,10 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
         setPreviewComplete(false);
       }, children: "Second page" })
     ] }),
-    /* @__PURE__ */ jsxs10("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: [
-      renderPage(creatorJourneySettings(settings, link, currentStage, joinHref), activate),
-      /* @__PURE__ */ jsxs10("footer", { className: "bg-black px-5 pb-9 pt-5 text-center text-sm text-white/60", children: [
+    /* @__PURE__ */ jsx12("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: renderPage(
+      creatorJourneySettings(settings, link, currentStage, joinHref),
+      activate,
+      /* @__PURE__ */ jsxs10("footer", { className: "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" ? "#71717a" : "rgba(255,255,255,0.6)" }, children: [
         /* @__PURE__ */ jsx12("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
           event.preventDefault();
           setPrivacy(true);
@@ -2838,7 +2841,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
           creatorName
         ] })
       ] })
-    ] }),
+    ) }),
     previewComplete && /* @__PURE__ */ jsx12("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
     activeDialog && /* @__PURE__ */ jsx12("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, children: /* @__PURE__ */ jsx12("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", children: privacy ? /* @__PURE__ */ jsxs10(Fragment8, { children: [
       /* @__PURE__ */ jsx12("h2", { id: titleId, className: "sr-only", children: "Privacy Policy" }),

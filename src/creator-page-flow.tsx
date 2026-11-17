@@ -42,7 +42,7 @@ export type CreatorPageFlowProps = {
   link: any; settings: any; creatorName?: string; stage?: CreatorPageStage; isPreview?: boolean;
   joinHref: string; privacyHref: string; turnstileSiteKey?: string;
   verify?: (token: string, target: string) => Promise<void>;
-  renderPage: (settings: any, activate: (url: string, proceed: (options?: { track?: boolean }) => void) => boolean) => React.ReactNode;
+  renderPage: (settings: any, activate: (url: string, proceed: (options?: { track?: boolean }) => void) => boolean, footer: React.ReactNode) => React.ReactNode;
 };
 
 export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }: CreatorPageFlowProps) {
@@ -98,11 +98,12 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
   return <div className="relative" data-creator-stage={currentStage}>
     {isPreview && <nav aria-label="Creator flow preview" className="flex justify-center gap-2 bg-black p-3 text-xs text-white"><button type="button" onClick={() => { setPreviewStage("intro"); setPending(null); setPreviewComplete(false); }}>First page</button><span aria-hidden="true">→</span><button type="button" onClick={() => { setPreviewStage("join"); setPending(null); setPreviewComplete(false); }}>Second page</button></nav>}
     <div aria-hidden={activeDialog || undefined} inert={activeDialog ? true : undefined}>
-      {renderPage(creatorJourneySettings(settings, link, currentStage, joinHref), activate)}
-      <footer className="bg-black px-5 pb-9 pt-5 text-center text-sm text-white/60">
-        <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>
-        <p className="mt-3">© {new Date().getFullYear()} {creatorName}</p>
-      </footer>
+      {renderPage(creatorJourneySettings(settings, link, currentStage, joinHref), activate,
+        <footer className="relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm" style={{ color: settings?.theme_mode === "light" ? "#71717a" : "rgba(255,255,255,0.6)" }}>
+          <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>
+          <p className="mt-3">© {new Date().getFullYear()} {creatorName}</p>
+        </footer>
+      )}
     </div>
     {previewComplete && <p role="status" className="bg-black p-3 text-center text-sm text-white">Preview complete. The live page continues through the existing tracked link.</p>}
     {activeDialog && <div className={`${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`}>
