@@ -137,6 +137,7 @@ interface Link {
 }
 
 interface LandingPageViewerProps {
+    pageFooter?: React.ReactNode;
     link: Link;
     settings: LandingPageSettings;
     onButtonClick?: () => void;
@@ -150,7 +151,7 @@ interface LandingPageViewerProps {
     isFreePlan?: boolean;
     visitorLocationLabel?: string | null;
 }
-declare function LandingPageViewer({ link, settings, onButtonClick, onNavigate, onCtaActivate, browserHandoff, isPreview, isFreePlan, visitorLocationLabel, }: LandingPageViewerProps): react_jsx_runtime.JSX.Element;
+declare function LandingPageViewer({ link, settings, onButtonClick, onNavigate, onCtaActivate, pageFooter, browserHandoff, isPreview, isFreePlan, visitorLocationLabel, }: LandingPageViewerProps): react_jsx_runtime.JSX.Element;
 
 interface ModernAudioPlayerProps {
     src: string;
@@ -203,7 +204,7 @@ type CreatorPageFlowProps = {
     verify?: (token: string, target: string) => Promise<void>;
     renderPage: (settings: any, activate: (url: string, proceed: (options?: {
         track?: boolean;
-    }) => void) => boolean) => React.ReactNode;
+    }) => void) => boolean, footer: React.ReactNode) => React.ReactNode;
 };
 declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage, isPreview, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }: CreatorPageFlowProps): react_jsx_runtime.JSX.Element;
 
