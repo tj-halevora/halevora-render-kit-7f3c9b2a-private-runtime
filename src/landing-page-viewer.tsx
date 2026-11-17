@@ -1,5 +1,6 @@
 "use client";
 
+import { appendCreatorJourneySearch } from "./creator-page-flow-model";
 import React, { useState, useEffect, useRef } from "react";
 
 import { Avatar } from "@heroui/react";
@@ -41,6 +42,8 @@ interface LandingPageViewerProps {
   onButtonClick?: () => void;
   /** Return true when the host handles navigation without leaving this page. */
   onNavigate?: (url: string) => boolean;
+  browserHandoff?: "existing" | "in-app-only" | "none";
+  onCtaActivate?: (url: string, proceed: (options?: { track?: boolean }) => void) => boolean;
   isPreview?: boolean; 
   isFreePlan?: boolean; 
   visitorLocationLabel?: string | null;
@@ -130,17 +133,21 @@ function toSafariHandoffUrl(url: string): string {
 function wrapUrlForNavigation(
   url: string | null | undefined,
   isPreview: boolean | undefined,
+  allowExternalEscape = true,
 ): string {
   const normalizedUrl = String(url || "").trim();
   if (!normalizedUrl) return "";
-  const safeUrl = /^go\//i.test(normalizedUrl)
+  let safeUrl = /^go\//i.test(normalizedUrl)
     ? `/${normalizedUrl}`
     : normalizedUrl;
+  if (typeof window !== "undefined" && /^\/(?:go|join)\//.test(safeUrl)) {
+    safeUrl = appendCreatorJourneySearch(safeUrl, window.location.search);
+  }
 
-  if (!isPreview && isRedditFlow()) {
+  if (!isPreview && allowExternalEscape && isRedditFlow()) {
     return `/reddit-escape?target=${encodeURIComponent(safeUrl)}`;
   }
-  if (!isPreview && isTwitterFlow()) {
+  if (!isPreview && allowExternalEscape && isTwitterFlow()) {
     return toSafariHandoffUrl(safeUrl);
   }
   return safeUrl;
@@ -201,6 +208,8 @@ export function LandingPageViewer({
   settings,
   onButtonClick,
   onNavigate,
+  onCtaActivate,
+  browserHandoff = "existing",
   isPreview = false,
   isFreePlan = false,
   visitorLocationLabel = null,
@@ -444,6 +453,8 @@ export function LandingPageViewer({
   const alreadyInChrome = typeof navigator !== "undefined" &&
     /\bCriOS\//i.test(navigator.userAgent) && !isInAppBrowser() && !isInstagramInAppBrowser();
   const shouldEscapeInAppBrowser =
+    browserHandoff !== "none" &&
+    (browserHandoff !== "in-app-only" || isInAppBrowser() || isInstagramInAppBrowser()) &&
     !isPreview &&
     !alreadyInChrome &&
     (isWhitehatLink || isInAppBrowser()) &&
@@ -570,7 +581,7 @@ export function LandingPageViewer({
     },
   ) => {
     if (!url) return;
-    const finalUrl = wrapUrlForNavigation(url, isPreview) || url;
+    const finalUrl = wrapUrlForNavigation(url, isPreview, browserHandoff === "existing" || shouldEscapeInAppBrowser) || url;
     if (!finalUrl) return;
     const absoluteUrl = toAbsoluteUrl(finalUrl);
     const fromUserGesture = opts?.fromUserGesture === true;
@@ -592,13 +603,13 @@ export function LandingPageViewer({
   };
 
   const getNavigationTargets = (url: string) => {
-    const finalUrl = wrapUrlForNavigation(url, isPreview) || url;
+    const finalUrl = wrapUrlForNavigation(url, isPreview, browserHandoff === "existing" || shouldEscapeInAppBrowser) || url;
     const absoluteUrl = toAbsoluteUrl(finalUrl);
 
     return { finalUrl, absoluteUrl };
   };
 
-  const getNativeLinkProps = (url: string) => {
+  const getNativeLinkProps = (url: string, isCta = false) => {
     const { finalUrl, absoluteUrl } = getNavigationTargets(url);
 
     const attemptExternalOpen = () => {
@@ -623,6 +634,12 @@ export function LandingPageViewer({
       rel: shouldEscapeInAppBrowser ? "noopener noreferrer" : undefined,
       attemptExternalOpen,
       onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+        if (isCta && onCtaActivate?.(url, (options) => {
+          if (options?.track !== false) trackClick(link.id, isPreview);
+          onButtonClick?.();
+          if (attemptExternalOpen() || (!isPreview && onNavigate?.(absoluteUrl))) return;
+          if (!isPreview) window.location.href = absoluteUrl;
+        })) { event.preventDefault(); return; }
         trackClick(link.id, isPreview);
 
         if (onButtonClick) {
@@ -637,6 +654,11 @@ export function LandingPageViewer({
   };
 
   const handleButtonClick = () => {
+    if (onCtaActivate?.(link.destination_url || "", () => {
+      if (isPreview || !link.destination_url) return;
+      trackClick(link.id, isPreview);
+      navigateToUrl(link.destination_url, { fromUserGesture: true });
+    })) return;
     if (onButtonClick) {
       onButtonClick();
     }
@@ -1592,6 +1614,11 @@ useEffect(() => {
                           };
 
                           const handleCardClick = () => {
+                            if (onCtaActivate?.(card.url, (options) => {
+                              if (isPreview) return;
+                              if (options?.track !== false) trackClick(link.id, isPreview);
+                              navigateToUrl(card.url, { fromUserGesture: true });
+                            })) return;
                             if (card.require_18plus) {
                               setShowingAgeConfirmationFor(card.id);
                               return;
@@ -1620,12 +1647,12 @@ useEffect(() => {
                             !card.require_18plus;
 
                           const cardLinkProps = useNativeCardLink
-                            ? getNativeLinkProps(card.url)
+                            ? getNativeLinkProps(card.url, true)
                             : null;
 
                           const ageConfirmLinkProps =
                             shouldEscapeInAppBrowser && card.url
-                              ? getNativeLinkProps(card.url)
+                              ? getNativeLinkProps(card.url, true)
                               : null;
 
                           const renderCardBodyContent = () => (
@@ -1802,6 +1829,7 @@ useEffect(() => {
                                             : "text-foreground"
                                         }`}
                                         style={{
+                                          color: card.style.text_color || undefined,
                                           textShadow:
                                             card.style.type === "image" ||
                                             card.style.type === "video"
@@ -1839,6 +1867,7 @@ useEffect(() => {
                                       <h3
                                         className={`${sizeTitleClass} font-semibold text-white`}
                                         style={{
+                                          color: card.style.text_color || undefined,
                                           textShadow:
                                             "0 2px 8px rgba(0,0,0,0.5)",
                                         }}
@@ -2024,7 +2053,7 @@ useEffect(() => {
                     >
                       {!isPreview && link.destination_url ? (
                         <a
-                          {...getNativeLinkProps(link.destination_url)}
+                          {...getNativeLinkProps(link.destination_url, true)}
                           className="block w-full rounded-xl bg-content1 shadow-lg transition-transform hover:scale-[1.02]"
                         >
                           <div className="p-6">

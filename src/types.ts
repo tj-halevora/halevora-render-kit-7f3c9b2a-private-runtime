@@ -10,6 +10,7 @@ export interface CTACardStyle {
   size?: "small" | "standard" | "large" | null;
   button_height?: number | null;
   background_color?: string | null;
+  text_color?: string | null;
   background_gradient?: { start: string; end: string } | null;
   background_image?: string | null;
   background_video?: string | null;
