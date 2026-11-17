@@ -32,10 +32,58 @@ var index_exports = {};
 __export(index_exports, {
   AgeConfirmationModal: () => AgeConfirmationModal,
   CTACardWithMechanisms: () => CTACardWithMechanisms,
+  CreatorPageFlow: () => CreatorPageFlow,
+  CreatorPrivacyPolicy: () => CreatorPrivacyPolicy,
   LandingPageViewer: () => LandingPageViewer,
-  ModernAudioPlayer: () => ModernAudioPlayer
+  ModernAudioPlayer: () => ModernAudioPlayer,
+  appendCreatorJourneySearch: () => appendCreatorJourneySearch,
+  creatorDisplayName: () => creatorDisplayName,
+  creatorJourneySettings: () => creatorJourneySettings
 });
 module.exports = __toCommonJS(index_exports);
+
+// src/creator-page-flow-model.ts
+function creatorDisplayName(settings, link) {
+  for (const value of [settings == null ? void 0 : settings.display_name, link == null ? void 0 : link.creator_name, link == null ? void 0 : link.title, link == null ? void 0 : link.domain]) {
+    if (typeof value === "string" && value.trim()) return value.trim().slice(0, 160);
+  }
+  return "Creator";
+}
+function appendCreatorJourneySearch(target, search) {
+  const url = new URL(target, "https://creator.invalid");
+  const existingKeys = new Set(url.searchParams.keys());
+  new URLSearchParams(search).forEach((value, key) => {
+    if (!existingKeys.has(key)) url.searchParams.append(key, value);
+  });
+  return target.startsWith("/") ? `${url.pathname}${url.search}${url.hash}` : url.toString();
+}
+function creatorJourneySettings(settings, link, stage, joinHref) {
+  var _a;
+  const source = settings != null ? settings : {};
+  const cards = Array.isArray(source.cta_cards) ? source.cta_cards : [];
+  const fallback = { id: "default", title: "Chat with me", url: (link == null ? void 0 : link.destination_url) || "", order: 0, style: { type: "solid", background_color: "#ffffff", text_color: "#08080a" } };
+  const introCard = { ...fallback, id: ((_a = cards[0]) == null ? void 0 : _a.id) || "default", title: "More of me \u2192", url: joinHref };
+  return {
+    background_color: "#08080a",
+    background_gradient: { start: "#08080a", end: "#08080a" },
+    theme_mode: "dark",
+    button_style: "solid",
+    button_color: "#ffffff",
+    profile_display_mode: "full",
+    social_links: [],
+    verified_badge: false,
+    verified_badge_style: "solid",
+    show_follower_count: false,
+    show_domain_handle: false,
+    ...source,
+    display_name: creatorDisplayName(source, link),
+    // The visitor explicitly chooses each step; a stored timer cannot skip the age gate.
+    auto_redirect_enabled: false,
+    layout_sections: Array.from(/* @__PURE__ */ new Set([...source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"], "cta_block"])),
+    cta_cards: stage === "intro" ? [introCard] : (cards.length ? cards : [fallback]).map((card) => ({ ...card, require_18plus: false })),
+    ...stage === "intro" ? { gallery_images: [], voice_note_url: null } : {}
+  };
+}
 
 // src/landing-page-viewer.tsx
 var import_react21 = __toESM(require("react"));
@@ -907,14 +955,17 @@ function toSafariHandoffUrl(url) {
   const absoluteUrl = toAbsoluteUrl(url);
   return absoluteUrl.startsWith("https://") ? `x-safari-${absoluteUrl}` : absoluteUrl;
 }
-function wrapUrlForNavigation(url, isPreview) {
+function wrapUrlForNavigation(url, isPreview, allowExternalEscape = true) {
   const normalizedUrl = String(url || "").trim();
   if (!normalizedUrl) return "";
-  const safeUrl = /^go\//i.test(normalizedUrl) ? `/${normalizedUrl}` : normalizedUrl;
-  if (!isPreview && isRedditFlow()) {
+  let safeUrl = /^go\//i.test(normalizedUrl) ? `/${normalizedUrl}` : normalizedUrl;
+  if (typeof window !== "undefined" && /^\/(?:go|join)\//.test(safeUrl)) {
+    safeUrl = appendCreatorJourneySearch(safeUrl, window.location.search);
+  }
+  if (!isPreview && allowExternalEscape && isRedditFlow()) {
     return `/reddit-escape?target=${encodeURIComponent(safeUrl)}`;
   }
-  if (!isPreview && isTwitterFlow()) {
+  if (!isPreview && allowExternalEscape && isTwitterFlow()) {
     return toSafariHandoffUrl(safeUrl);
   }
   return safeUrl;
@@ -960,6 +1011,8 @@ function LandingPageViewer({
   settings,
   onButtonClick,
   onNavigate,
+  onCtaActivate,
+  browserHandoff = "existing",
   isPreview = false,
   isFreePlan = false,
   visitorLocationLabel = null
@@ -1143,7 +1196,7 @@ function LandingPageViewer({
   const normalizedLinkType = (link.link_type || "").toLowerCase();
   const isWhitehatLink = normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2";
   const alreadyInChrome = typeof navigator !== "undefined" && /\bCriOS\//i.test(navigator.userAgent) && !isInAppBrowser() && !isInstagramInAppBrowser();
-  const shouldEscapeInAppBrowser = !isPreview && !alreadyInChrome && (isWhitehatLink || isInAppBrowser()) && (isWhitehatLink || link.enable_deeplink !== false) && (!isWhitehatLink || isMobileBrowser());
+  const shouldEscapeInAppBrowser = browserHandoff !== "none" && (browserHandoff !== "in-app-only" || isInAppBrowser() || isInstagramInAppBrowser()) && !isPreview && !alreadyInChrome && (isWhitehatLink || isInAppBrowser()) && (isWhitehatLink || link.enable_deeplink !== false) && (!isWhitehatLink || isMobileBrowser());
   const buildDeepLinkUrl = (absoluteUrl) => {
     if (typeof window === "undefined") return null;
     const ua = navigator.userAgent || "";
@@ -1242,7 +1295,7 @@ function LandingPageViewer({
   };
   const navigateToUrl = (url, opts) => {
     if (!url) return;
-    const finalUrl = wrapUrlForNavigation(url, isPreview) || url;
+    const finalUrl = wrapUrlForNavigation(url, isPreview, browserHandoff === "existing" || shouldEscapeInAppBrowser) || url;
     if (!finalUrl) return;
     const absoluteUrl = toAbsoluteUrl(finalUrl);
     const fromUserGesture = (opts == null ? void 0 : opts.fromUserGesture) === true;
@@ -1259,11 +1312,11 @@ function LandingPageViewer({
     window.location.href = absoluteUrl;
   };
   const getNavigationTargets = (url) => {
-    const finalUrl = wrapUrlForNavigation(url, isPreview) || url;
+    const finalUrl = wrapUrlForNavigation(url, isPreview, browserHandoff === "existing" || shouldEscapeInAppBrowser) || url;
     const absoluteUrl = toAbsoluteUrl(finalUrl);
     return { finalUrl, absoluteUrl };
   };
-  const getNativeLinkProps = (url) => {
+  const getNativeLinkProps = (url, isCta = false) => {
     const { finalUrl, absoluteUrl } = getNavigationTargets(url);
     const attemptExternalOpen = () => {
       if (isTwitterFlow() && finalUrl.startsWith("x-safari-")) {
@@ -1284,6 +1337,15 @@ function LandingPageViewer({
       rel: shouldEscapeInAppBrowser ? "noopener noreferrer" : void 0,
       attemptExternalOpen,
       onClick: (event) => {
+        if (isCta && (onCtaActivate == null ? void 0 : onCtaActivate(url, (options) => {
+          if ((options == null ? void 0 : options.track) !== false) trackClick(link.id, isPreview);
+          onButtonClick == null ? void 0 : onButtonClick();
+          if (attemptExternalOpen() || !isPreview && (onNavigate == null ? void 0 : onNavigate(absoluteUrl))) return;
+          if (!isPreview) window.location.href = absoluteUrl;
+        }))) {
+          event.preventDefault();
+          return;
+        }
         trackClick(link.id, isPreview);
         if (onButtonClick) {
           onButtonClick();
@@ -1295,6 +1357,11 @@ function LandingPageViewer({
     };
   };
   const handleButtonClick = () => {
+    if (onCtaActivate == null ? void 0 : onCtaActivate(link.destination_url || "", () => {
+      if (isPreview || !link.destination_url) return;
+      trackClick(link.id, isPreview);
+      navigateToUrl(link.destination_url, { fromUserGesture: true });
+    })) return;
     if (onButtonClick) {
       onButtonClick();
     }
@@ -2110,6 +2177,11 @@ function LandingPageViewer({
                             borderRadius: "1rem"
                           };
                           const handleCardClick = () => {
+                            if (onCtaActivate == null ? void 0 : onCtaActivate(card.url, (options) => {
+                              if (isPreview) return;
+                              if ((options == null ? void 0 : options.track) !== false) trackClick(link.id, isPreview);
+                              navigateToUrl(card.url, { fromUserGesture: true });
+                            })) return;
                             if (card.require_18plus) {
                               setShowingAgeConfirmationFor(card.id);
                               return;
@@ -2128,8 +2200,8 @@ function LandingPageViewer({
                             setShowingAgeConfirmationFor(null);
                           };
                           const useNativeCardLink = !isPreview && !!card.url && !card.require_18plus;
-                          const cardLinkProps = useNativeCardLink ? getNativeLinkProps(card.url) : null;
-                          const ageConfirmLinkProps = shouldEscapeInAppBrowser && card.url ? getNativeLinkProps(card.url) : null;
+                          const cardLinkProps = useNativeCardLink ? getNativeLinkProps(card.url, true) : null;
+                          const ageConfirmLinkProps = shouldEscapeInAppBrowser && card.url ? getNativeLinkProps(card.url, true) : null;
                           const renderCardBodyContent = () => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
                             "div",
                             {
@@ -2272,6 +2344,7 @@ function LandingPageViewer({
                                     {
                                       className: `${sizeTitleClass} font-semibold ${card.style.type === "image" || card.style.type === "gradient" || card.style.type === "solid" || card.style.type === "video" ? "text-white" : "text-foreground"}`,
                                       style: {
+                                        color: card.style.text_color || void 0,
                                         textShadow: card.style.type === "image" || card.style.type === "video" ? "0 2px 8px rgba(0,0,0,0.5)" : "none"
                                       },
                                       children: card.title
@@ -2292,6 +2365,7 @@ function LandingPageViewer({
                                     {
                                       className: `${sizeTitleClass} font-semibold text-white`,
                                       style: {
+                                        color: card.style.text_color || void 0,
                                         textShadow: "0 2px 8px rgba(0,0,0,0.5)"
                                       },
                                       children: brandedNonPremiumText
@@ -2431,7 +2505,7 @@ function LandingPageViewer({
                             children: !isPreview && link.destination_url ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                               "a",
                               {
-                                ...getNativeLinkProps(link.destination_url),
+                                ...getNativeLinkProps(link.destination_url, true),
                                 className: "block w-full rounded-xl bg-content1 shadow-lg transition-transform hover:scale-[1.02]",
                                 children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center justify-between", children: [
                                   /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex-1", children: [
@@ -2590,11 +2664,263 @@ function LandingPageViewer({
     }
   );
 }
+
+// src/creator-page-flow.tsx
+var import_react27 = require("react");
+
+// src/creator-privacy-policy.tsx
+var import_jsx_runtime11 = require("react/jsx-runtime");
+function CreatorPrivacyPolicy({ creatorName, domain }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("article", { className: "mx-auto max-w-3xl space-y-5 px-5 py-10 text-sm leading-7", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("h1", { className: "text-3xl font-semibold", children: [
+      "Privacy Policy \u2014 ",
+      creatorName
+    ] }),
+    domain && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+      "Website: ",
+      domain
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+      "This policy explains how information is used when you visit ",
+      creatorName,
+      "'s creator page and follow its links."
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Information collected" }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "The website processes your IP address, browser and device information, referring page, approximate location derived from your IP address, page visits, link clicks, and campaign or external click identifiers included in the URL. These help operate the page, understand traffic and measure link performance." }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Cookies and browser storage" }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "First-party cookies and browser storage are used for visitor and session identifiers, consistent page variants, and a short-lived age-confirmation and security-verification record. Browser settings let you clear or restrict this storage; doing so may affect functionality. The age confirmation records your declaration that you are at least 18; it does not collect a date of birth or verify your identity." }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Security verification" }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+      "Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See ",
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("a", { className: "underline", href: "https://www.cloudflare.com/privacypolicy/", target: "_blank", rel: "noopener noreferrer", children: "Cloudflare's Privacy Policy" }),
+      "."
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Hosting, analytics and destination services" }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "Technical service providers process information needed for hosting, media delivery, security and analytics. Where a link uses a tracking service, that service may receive campaign identifiers and connect a visit with later subscriptions or purchases on the destination service. Connected tracking integrations may report attributed events to configured advertising or analytics services. Processing can take place in other countries." }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "External social profiles and destination websites have their own privacy policies and terms. This policy covers this creator page, rather than those external services. Following an external link shares information needed to open and, where configured, attribute that visit." }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Purposes and retention" }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "Information is used to provide and secure the website, maintain the requested link journey, investigate errors and measure traffic and conversions. It is retained for these operational, reporting and legal purposes, subject to the relevant provider's settings and applicable law. This website does not ask you to enter payment details on the creator page." }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Your choices and privacy requests" }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+      "Where applicable law gives you rights to access, correct, delete or restrict use of your personal information, you can contact ",
+      creatorName,
+      " through a social profile linked from this page. Identify the website and your request; do not send passwords or payment details. Your browser settings and the destination service's privacy controls provide additional choices."
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Changes to this policy" }),
+    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "This policy may be updated when the website's operation changes. The version published on this website applies to its current operation." })
+  ] });
+}
+
+// src/creator-page-flow.tsx
+var import_jsx_runtime12 = require("react/jsx-runtime");
+var turnstileScript;
+function loadTurnstile() {
+  if (window.turnstile) return Promise.resolve();
+  if (!turnstileScript) turnstileScript = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.onload = () => {
+      if (window.turnstile) resolve();
+      else {
+        script.remove();
+        turnstileScript = void 0;
+        reject(new Error("Verification could not load. Please try again."));
+      }
+    };
+    script.onerror = () => {
+      script.remove();
+      turnstileScript = void 0;
+      reject(new Error("Verification could not load. Please try again."));
+    };
+    document.head.appendChild(script);
+  });
+  return turnstileScript;
+}
+function TurnstileCheck({ siteKey, onToken, onError }) {
+  const container = (0, import_react27.useRef)(null);
+  const callbacks = (0, import_react27.useRef)({ onToken, onError });
+  callbacks.current = { onToken, onError };
+  (0, import_react27.useEffect)(() => {
+    let disposed = false;
+    let widget;
+    loadTurnstile().then(() => {
+      if (disposed || !container.current || !window.turnstile) return;
+      widget = window.turnstile.render(container.current, {
+        sitekey: siteKey,
+        action: "creator_age",
+        theme: "dark",
+        size: "flexible",
+        callback: (token) => callbacks.current.onToken(token),
+        "expired-callback": () => {
+          callbacks.current.onToken("");
+          callbacks.current.onError("Verification expired. Please try again.");
+        },
+        "error-callback": () => {
+          callbacks.current.onToken("");
+          callbacks.current.onError("Verification could not complete. Please try again.");
+        }
+      });
+    }).catch((error) => {
+      if (!disposed) callbacks.current.onError(error.message);
+    });
+    return () => {
+      var _a;
+      disposed = true;
+      if (widget !== void 0) (_a = window.turnstile) == null ? void 0 : _a.remove(widget);
+    };
+  }, [siteKey]);
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref: container, className: "my-4 min-h-[65px] w-full" });
+}
+function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }) {
+  const [previewStage, setPreviewStage] = (0, import_react27.useState)(stage);
+  const [pending, setPending] = (0, import_react27.useState)(null);
+  const [privacy, setPrivacy] = (0, import_react27.useState)(false);
+  const [token, setToken] = (0, import_react27.useState)("");
+  const [error, setError] = (0, import_react27.useState)("");
+  const [busy, setBusy] = (0, import_react27.useState)(false);
+  const [attempt, setAttempt] = (0, import_react27.useState)(0);
+  const [previewComplete, setPreviewComplete] = (0, import_react27.useState)(false);
+  const currentStage = isPreview ? previewStage : stage;
+  const modal = (0, import_react27.useRef)(null);
+  const titleId = (0, import_react27.useId)();
+  const creatorName = ownerName || (link == null ? void 0 : link.creator_name) || creatorDisplayName(settings, link);
+  const activeDialog = Boolean(pending || privacy);
+  (0, import_react27.useEffect)(() => {
+    var _a;
+    if (!activeDialog) return;
+    const previous = document.activeElement;
+    const oldOverflow = document.body.style.overflow;
+    if (!isPreview) document.body.style.overflow = "hidden";
+    (_a = modal.current) == null ? void 0 : _a.focus();
+    const key = (event) => {
+      var _a2, _b;
+      if (event.key === "Escape" && !busy) {
+        setPending(null);
+        setPrivacy(false);
+      }
+      if (event.key !== "Tab") return;
+      const nodes = Array.from((_b = (_a2 = modal.current) == null ? void 0 : _a2.querySelectorAll('button:not(:disabled), a[href], iframe, [tabindex="0"]')) != null ? _b : []);
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last == null ? void 0 : last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first == null ? void 0 : first.focus();
+      }
+    };
+    document.addEventListener("keydown", key);
+    return () => {
+      document.removeEventListener("keydown", key);
+      if (!isPreview) document.body.style.overflow = oldOverflow;
+      previous == null ? void 0 : previous.focus();
+    };
+  }, [activeDialog, busy, isPreview]);
+  const activate = (url, proceed) => {
+    if (currentStage === "intro") {
+      if (isPreview) {
+        setPreviewStage("join");
+        setPreviewComplete(false);
+      } else proceed({ track: false });
+      return true;
+    }
+    setToken("");
+    setError("");
+    setAttempt((value) => value + 1);
+    setPending({ target: url, proceed });
+    return true;
+  };
+  const confirm = async () => {
+    if (!pending || busy) return;
+    if (isPreview) {
+      setPending(null);
+      setPreviewComplete(true);
+      return;
+    }
+    if (!token || !verify) return;
+    setBusy(true);
+    setError("");
+    try {
+      await verify(token, pending.target);
+      pending.proceed();
+      setPending(null);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Verification failed. Please try again.");
+      setToken("");
+      setAttempt((value) => value + 1);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "relative", "data-creator-stage": currentStage, children: [
+    isPreview && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("nav", { "aria-label": "Creator flow preview", className: "flex justify-center gap-2 bg-black p-3 text-xs text-white", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", onClick: () => {
+        setPreviewStage("intro");
+        setPending(null);
+        setPreviewComplete(false);
+      }, children: "First page" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { "aria-hidden": "true", children: "\u2192" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", onClick: () => {
+        setPreviewStage("join");
+        setPending(null);
+        setPreviewComplete(false);
+      }, children: "Second page" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: [
+      renderPage(creatorJourneySettings(settings, link, currentStage, joinHref), activate),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("footer", { className: "bg-black px-5 pb-9 pt-5 text-center text-sm text-white/60", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
+          event.preventDefault();
+          setPrivacy(true);
+        } : void 0, children: "Privacy Policy" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("p", { className: "mt-3", children: [
+          "\xA9 ",
+          (/* @__PURE__ */ new Date()).getFullYear(),
+          " ",
+          creatorName
+        ] })
+      ] })
+    ] }),
+    previewComplete && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
+    activeDialog && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", children: privacy ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { id: titleId, className: "sr-only", children: "Privacy Policy" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", className: "rounded-full border border-white/30 px-5 py-2", onClick: () => setPrivacy(false), children: "Close" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "text-left", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0 }) })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { id: titleId, className: "text-2xl font-semibold", children: "Are you over 18?" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "mt-3 text-sm leading-6 text-white/70", children: "This link is for adults only. Please confirm you are 18 or older to continue." }),
+      isPreview ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70", children: "Cloudflare verification appears here on the live page. Preview only." }) : turnstileSiteKey ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TurnstileCheck, { siteKey: turnstileSiteKey, onToken: (value) => {
+        setToken(value);
+        if (value) setError("");
+      }, onError: setError }, attempt) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "alert", className: "my-4 text-sm", children: "Verification is temporarily unavailable. Please try again later." }),
+      error && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "alert", className: "my-3 text-sm text-red-300", children: error }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", className: "mt-4 w-full rounded-full bg-white px-5 py-3 font-semibold text-black disabled:opacity-40", disabled: busy || !isPreview && !token, onClick: confirm, children: busy ? "Verifying\u2026" : "Yes, I'm over 18" }),
+      !isPreview && error && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", className: "mt-3 text-sm underline", onClick: () => {
+        setError("");
+        setToken("");
+        setAttempt((value) => value + 1);
+      }, children: "Retry verification" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", disabled: busy, className: "mt-3 w-full rounded-full border border-white/20 px-5 py-3 text-white/70", onClick: () => setPending(null), children: "No, take me back" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { href: privacyHref, className: "mt-4 inline-block text-xs underline text-white/60", onClick: isPreview ? (event) => {
+        event.preventDefault();
+        setPending(null);
+        setPrivacy(true);
+      } : void 0, children: "Privacy Policy" })
+    ] }) }) })
+  ] });
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AgeConfirmationModal,
   CTACardWithMechanisms,
+  CreatorPageFlow,
+  CreatorPrivacyPolicy,
   LandingPageViewer,
-  ModernAudioPlayer
+  ModernAudioPlayer,
+  appendCreatorJourneySearch,
+  creatorDisplayName,
+  creatorJourneySettings
 });
 //# sourceMappingURL=index.js.map

@@ -24,6 +24,7 @@ interface CTACardStyle {
     size?: "small" | "standard" | "large" | null;
     button_height?: number | null;
     background_color?: string | null;
+    text_color?: string | null;
     background_gradient?: {
         start: string;
         end: string;
@@ -141,11 +142,15 @@ interface LandingPageViewerProps {
     onButtonClick?: () => void;
     /** Return true when the host handles navigation without leaving this page. */
     onNavigate?: (url: string) => boolean;
+    browserHandoff?: "existing" | "in-app-only" | "none";
+    onCtaActivate?: (url: string, proceed: (options?: {
+        track?: boolean;
+    }) => void) => boolean;
     isPreview?: boolean;
     isFreePlan?: boolean;
     visitorLocationLabel?: string | null;
 }
-declare function LandingPageViewer({ link, settings, onButtonClick, onNavigate, isPreview, isFreePlan, visitorLocationLabel, }: LandingPageViewerProps): react_jsx_runtime.JSX.Element;
+declare function LandingPageViewer({ link, settings, onButtonClick, onNavigate, onCtaActivate, browserHandoff, isPreview, isFreePlan, visitorLocationLabel, }: LandingPageViewerProps): react_jsx_runtime.JSX.Element;
 
 interface ModernAudioPlayerProps {
     src: string;
@@ -171,4 +176,41 @@ interface AgeConfirmationModalProps {
 }
 declare function AgeConfirmationModal({ isOpen, onConfirm, onCancel, confirmHref, confirmTargetBlank, children, }: AgeConfirmationModalProps): react_jsx_runtime.JSX.Element;
 
-export { AgeConfirmationModal, type AgeConfirmationModalProps, type CTACard, type CTACardStyle, CTACardWithMechanisms, type LandingPageSettings, LandingPageViewer, type LayoutSectionKey, type Link, ModernAudioPlayer, type SectionSpacing, type SocialLink };
+type CreatorPageStage = "intro" | "join";
+declare function creatorDisplayName(settings: any, link: any): string;
+/** Retain repeated campaign parameters, without allowing the query to select a destination. */
+declare function appendCreatorJourneySearch(target: string, search: string): string;
+declare function creatorJourneySettings(settings: any, link: any, stage: CreatorPageStage, joinHref: string): any;
+
+type TurnstileApi = {
+    render: (node: HTMLElement, options: Record<string, unknown>) => string;
+    remove: (id: string) => void;
+};
+declare global {
+    interface Window {
+        turnstile?: TurnstileApi;
+    }
+}
+type CreatorPageFlowProps = {
+    link: any;
+    settings: any;
+    creatorName?: string;
+    stage?: CreatorPageStage;
+    isPreview?: boolean;
+    joinHref: string;
+    privacyHref: string;
+    turnstileSiteKey?: string;
+    verify?: (token: string, target: string) => Promise<void>;
+    renderPage: (settings: any, activate: (url: string, proceed: (options?: {
+        track?: boolean;
+    }) => void) => boolean) => React.ReactNode;
+};
+declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage, isPreview, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }: CreatorPageFlowProps): react_jsx_runtime.JSX.Element;
+
+/** Deliberately describes implemented behavior; no invented legal entity or retention promise. */
+declare function CreatorPrivacyPolicy({ creatorName, domain }: {
+    creatorName: string;
+    domain?: string;
+}): react_jsx_runtime.JSX.Element;
+
+export { AgeConfirmationModal, type AgeConfirmationModalProps, type CTACard, type CTACardStyle, CTACardWithMechanisms, CreatorPageFlow, type CreatorPageFlowProps, type CreatorPageStage, CreatorPrivacyPolicy, type LandingPageSettings, LandingPageViewer, type LayoutSectionKey, type Link, ModernAudioPlayer, type SectionSpacing, type SocialLink, appendCreatorJourneySearch, creatorDisplayName, creatorJourneySettings };
