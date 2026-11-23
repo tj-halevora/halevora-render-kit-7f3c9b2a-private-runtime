@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 const source = readFileSync(new URL('../src/creator-page-flow-model.ts', import.meta.url), 'utf8');
 const exports = {};
 vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { exports, URL, URLSearchParams });
-const { creatorJourneySettings, appendCreatorJourneySearch } = exports;
+const { creatorJourneySettings, appendCreatorJourneySearch, creatorUsesTwoPageFlow } = exports;
 test('first page has one neutral internal CTA; second page retains every original tracked capability', () => {
   const settings = { display_name: 'Katie', auto_redirect_enabled: true, cta_cards: [{ id: 'original-paid', title: 'Configured offer', url: '/go/vip/original-paid?ecid=saved', style: { type: 'image', background_image: '/a/vip/asset' }, require_18plus: true }, { id: 'original-free', url: '/go/vip/original-free', style: { type: 'solid' } }] };
   const original = JSON.stringify(settings);
@@ -27,4 +27,9 @@ test('campaign values survive both stages, including repeats and saved parameter
   assert.equal(final.searchParams.get('ecid'), 'saved');
   assert.deepEqual(final.searchParams.getAll('utm_content'), ['one', 'two']);
   assert.equal(final.searchParams.get('x'), '1');
+});
+
+test('only the V3 type opts into the two-page presentation', () => {
+  assert.equal(creatorUsesTwoPageFlow('whitehat_v3'), true);
+  for (const type of ['whitehat','whitehat_v2','greyhat','greyhat_v2','greyhat_v3','blackhat','',null,undefined]) assert.equal(creatorUsesTwoPageFlow(type), false);
 });

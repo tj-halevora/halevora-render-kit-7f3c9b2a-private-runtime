@@ -38,11 +38,15 @@ __export(index_exports, {
   ModernAudioPlayer: () => ModernAudioPlayer,
   appendCreatorJourneySearch: () => appendCreatorJourneySearch,
   creatorDisplayName: () => creatorDisplayName,
-  creatorJourneySettings: () => creatorJourneySettings
+  creatorJourneySettings: () => creatorJourneySettings,
+  creatorUsesTwoPageFlow: () => creatorUsesTwoPageFlow
 });
 module.exports = __toCommonJS(index_exports);
 
 // src/creator-page-flow-model.ts
+function creatorUsesTwoPageFlow(linkType) {
+  return linkType === "whitehat_v3";
+}
 function creatorDisplayName(settings, link) {
   for (const value of [settings == null ? void 0 : settings.display_name, link == null ? void 0 : link.creator_name, link == null ? void 0 : link.title, link == null ? void 0 : link.domain]) {
     if (typeof value === "string" && value.trim()) return value.trim().slice(0, 160);
@@ -2672,7 +2676,7 @@ var import_react27 = require("react");
 
 // src/creator-privacy-policy.tsx
 var import_jsx_runtime11 = require("react/jsx-runtime");
-function CreatorPrivacyPolicy({ creatorName, domain }) {
+function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }) {
   return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("article", { className: "mx-auto max-w-3xl space-y-5 px-5 py-10 text-sm leading-7", children: [
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("h1", { className: "text-3xl font-semibold", children: [
       "Privacy Policy \u2014 ",
@@ -2690,12 +2694,18 @@ function CreatorPrivacyPolicy({ creatorName, domain }) {
     /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Information collected" }),
     /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "The website processes your IP address, browser and device information, referring page, approximate location derived from your IP address, page visits, link clicks, and campaign or external click identifiers included in the URL. These help operate the page, understand traffic and measure link performance." }),
     /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Cookies and browser storage" }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "First-party cookies and browser storage are used for visitor and session identifiers, consistent page variants, and a short-lived age-confirmation and security-verification record. Browser settings let you clear or restrict this storage; doing so may affect functionality. The age confirmation records your declaration that you are at least 18; it does not collect a date of birth or verify your identity." }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Security verification" }),
     /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
-      "Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See ",
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("a", { className: "underline", href: "https://www.cloudflare.com/privacypolicy/", target: "_blank", rel: "noopener noreferrer", children: "Cloudflare's Privacy Policy" }),
-      "."
+      "First-party cookies and browser storage are used for visitor and session identifiers and consistent page variants",
+      usesCloudflare ? ", plus a short-lived age-confirmation and security-verification record" : "",
+      ". Browser settings let you clear or restrict this storage; doing so may affect functionality. Where age confirmation is shown, it asks you to declare that you are at least 18; it does not collect a date of birth or verify your identity."
+    ] }),
+    usesCloudflare && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Security verification" }),
+      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+        "Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See ",
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("a", { className: "underline", href: "https://www.cloudflare.com/privacypolicy/", target: "_blank", rel: "noopener noreferrer", children: "Cloudflare's Privacy Policy" }),
+        "."
+      ] })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Hosting, analytics and destination services" }),
     /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "Technical service providers process information needed for hosting, media delivery, security and analytics. Where a link uses a tracking service, that service may receive campaign identifiers and connect a visit with later subscriptions or purchases on the destination service. Connected tracking integrations may report attributed events to configured advertising or analytics services. Processing can take place in other countries." }),
@@ -2783,11 +2793,12 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
   const [busy, setBusy] = (0, import_react27.useState)(false);
   const [attempt, setAttempt] = (0, import_react27.useState)(0);
   const [previewComplete, setPreviewComplete] = (0, import_react27.useState)(false);
+  const isTwoPage = creatorUsesTwoPageFlow(link == null ? void 0 : link.link_type);
   const currentStage = isPreview ? previewStage : stage;
   const modal = (0, import_react27.useRef)(null);
   const titleId = (0, import_react27.useId)();
   const creatorName = ownerName || (link == null ? void 0 : link.creator_name) || creatorDisplayName(settings, link);
-  const activeDialog = Boolean(pending || privacy);
+  const activeDialog = Boolean(isTwoPage && pending || privacy);
   (0, import_react27.useEffect)(() => {
     var _a;
     if (!activeDialog) return;
@@ -2821,6 +2832,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
     };
   }, [activeDialog, busy, isPreview]);
   const activate = (url, proceed) => {
+    if (!isTwoPage) return false;
     if (currentStage === "intro") {
       if (isPreview) {
         setPreviewStage("join");
@@ -2835,7 +2847,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
     return true;
   };
   const confirm = async () => {
-    if (!pending || busy) return;
+    if (!isTwoPage || !pending || busy) return;
     if (isPreview) {
       setPending(null);
       setPreviewComplete(true);
@@ -2856,8 +2868,8 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
       setBusy(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "relative", "data-creator-stage": currentStage, children: [
-    isPreview && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("nav", { "aria-label": "Creator flow preview", className: "flex justify-center gap-2 bg-black p-3 text-xs text-white", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "relative", "data-creator-stage": isTwoPage ? currentStage : "single", children: [
+    isPreview && isTwoPage && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("nav", { "aria-label": "Creator flow preview", className: "flex justify-center gap-2 bg-black p-3 text-xs text-white", children: [
       /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", onClick: () => {
         setPreviewStage("intro");
         setPending(null);
@@ -2871,7 +2883,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
       }, children: "Second page" })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: renderPage(
-      creatorJourneySettings(settings, link, currentStage, joinHref),
+      isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : settings != null ? settings : {},
       activate,
       /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("footer", { className: "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" ? "#71717a" : "rgba(255,255,255,0.6)" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
@@ -2886,11 +2898,11 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
         ] })
       ] })
     ) }),
-    previewComplete && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
+    isTwoPage && previewComplete && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
     activeDialog && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", children: privacy ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { id: titleId, className: "sr-only", children: "Privacy Policy" }),
       /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", className: "rounded-full border border-white/30 px-5 py-2", onClick: () => setPrivacy(false), children: "Close" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "text-left", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0 }) })
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "text-left", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0, usesCloudflare: isTwoPage }) })
     ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
       /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { id: titleId, className: "text-2xl font-semibold", children: "Are you over 18?" }),
       /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "mt-3 text-sm leading-6 text-white/70", children: "This link is for adults only. Please confirm you are 18 or older to continue." }),
@@ -2924,6 +2936,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
   ModernAudioPlayer,
   appendCreatorJourneySearch,
   creatorDisplayName,
-  creatorJourneySettings
+  creatorJourneySettings,
+  creatorUsesTwoPageFlow
 });
 //# sourceMappingURL=index.js.map
