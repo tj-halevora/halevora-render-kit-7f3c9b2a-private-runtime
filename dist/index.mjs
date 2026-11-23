@@ -62,8 +62,10 @@ import React from "react";
 import { Icon } from "@iconify/react";
 import { jsx, jsxs } from "react/jsx-runtime";
 function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial }) {
+  var _a;
   const stage = settings.__creator_journey_stage;
-  const photo = settings.header_video_poster_url || settings.avatar_url;
+  const usesVideoCover = ["video", "video_background"].includes(settings.profile_display_mode) || settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background);
+  const photo = usesVideoCover ? settings.header_video_poster_url || settings.avatar_url : settings.avatar_url || settings.header_video_poster_url;
   const socials = Array.isArray(settings.social_links) ? settings.social_links : [];
   const instagram = socials.find((social) => /instagram/i.test(`${social.platform || ""} ${social.url || ""}`));
   let handle = "";

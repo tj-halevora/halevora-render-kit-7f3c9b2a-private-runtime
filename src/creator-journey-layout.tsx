@@ -14,7 +14,11 @@ export function CreatorJourneyLayout({ settings, pageFooter, renderAction, rende
   renderSocial: (social: any, className: string, icon: React.ReactNode) => React.ReactNode;
 }) {
   const stage: CreatorPageStage = settings.__creator_journey_stage;
-  const photo = settings.header_video_poster_url || settings.avatar_url;
+  const usesVideoCover = ["video", "video_background"].includes(settings.profile_display_mode) ||
+    (settings.profile_display_mode === "avatar" && settings.section_spacing?.__profile_video_background);
+  const photo = usesVideoCover
+    ? settings.header_video_poster_url || settings.avatar_url
+    : settings.avatar_url || settings.header_video_poster_url;
   const socials = Array.isArray(settings.social_links) ? settings.social_links : [];
   const instagram = socials.find((social: any) => /instagram/i.test(`${social.platform || ""} ${social.url || ""}`));
   let handle = "";
