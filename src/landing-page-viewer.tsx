@@ -450,7 +450,7 @@ export function LandingPageViewer({
   const normalizedLinkType =
     ((link as { link_type?: string }).link_type || "").toLowerCase();
   const isWhitehatLink =
-    normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2";
+    normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2" || normalizedLinkType === "whitehat_v3";
   // Chrome on iOS is already an external browser. Run the normal same-tab flow.
   const alreadyInChrome = typeof navigator !== "undefined" &&
     /\bCriOS\//i.test(navigator.userAgent) && !isInAppBrowser() && !isInstagramInAppBrowser();
@@ -823,7 +823,7 @@ useEffect(() => {
   useEffect(
     () => {
       if (isPreview) return;
-      if (link.link_type !== "whitehat" && link.link_type !== "whitehat_v2") return;
+      if (link.link_type !== "whitehat" && link.link_type !== "whitehat_v2" && link.link_type !== "whitehat_v3") return;
       if (!settings.auto_redirect_enabled) return;
 
       const cards = settings.cta_cards || [];
