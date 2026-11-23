@@ -32,6 +32,7 @@ var index_exports = {};
 __export(index_exports, {
   AgeConfirmationModal: () => AgeConfirmationModal,
   CTACardWithMechanisms: () => CTACardWithMechanisms,
+  CreatorJourneyLayout: () => CreatorJourneyLayout,
   CreatorPageFlow: () => CreatorPageFlow,
   CreatorPrivacyPolicy: () => CreatorPrivacyPolicy,
   LandingPageViewer: () => LandingPageViewer,
@@ -66,7 +67,7 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
   const source = settings != null ? settings : {};
   const cards = Array.isArray(source.cta_cards) ? source.cta_cards : [];
   const fallback = { id: "default", title: "Chat with me", url: (link == null ? void 0 : link.destination_url) || "", order: 0, style: { type: "solid", background_color: "#ffffff", text_color: "#08080a" } };
-  const introCard = { ...fallback, id: ((_a = cards[0]) == null ? void 0 : _a.id) || "default", title: "More of me \u2192", url: joinHref };
+  const introCard = { ...fallback, id: ((_a = cards[0]) == null ? void 0 : _a.id) || "default", title: "more of me", url: joinHref };
   return {
     background_color: "#08080a",
     background_gradient: { start: "#08080a", end: "#08080a" },
@@ -81,26 +82,15 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
     show_domain_handle: false,
     ...source,
     display_name: creatorDisplayName(source, link),
+    __creator_journey_stage: stage,
     // The visitor explicitly chooses each step; a stored timer cannot skip the age gate.
     auto_redirect_enabled: false,
     layout_sections: Array.from(/* @__PURE__ */ new Set([...source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"], "cta_block"])),
     cta_cards: stage === "intro" ? [introCard] : (cards.length ? cards : [fallback]).map((card) => ({ ...card, require_18plus: false })),
-    ...stage === "intro" ? { gallery_images: [], voice_note_url: null } : {
-      // Presentation only: retain every saved CTA identity and tracked route.
-      // Both renderers use this internal flag to omit hero/avatar placeholders.
-      __creator_join_text_only: true,
-      avatar_url: null,
-      header_video_url: null,
-      header_video_poster_url: null,
-      gallery_images: [],
-      voice_note_url: null,
-      social_links: [],
-      theme_mode: "dark",
-      background_color: "#08080a",
-      background_gradient: { start: "#08080a", end: "#08080a" },
-      layout_sections: ["bio", "cta_block"],
-      section_spacing: {},
-      bio: "More of my content. Tap below to chat with me.",
+    gallery_images: [],
+    voice_note_url: null,
+    ...stage === "join" ? {
+      // Only the presentation changes; every saved tracked capability survives.
       cta_cards: (cards.length ? cards : [fallback]).map((card) => ({
         ...card,
         title: "chat with me",
@@ -109,36 +99,100 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
         ctr_mechanisms: null,
         require_18plus: false
       }))
-    }
+    } : {}
   };
 }
 
+// src/creator-journey-layout.tsx
+var import_react = __toESM(require("react"));
+var import_react2 = require("@iconify/react");
+var import_jsx_runtime = require("react/jsx-runtime");
+function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial }) {
+  var _a;
+  const stage = settings.__creator_journey_stage;
+  const usesVideoCover = ["video", "video_background"].includes(settings.profile_display_mode) || settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background);
+  const photo = usesVideoCover ? settings.header_video_poster_url || settings.avatar_url : settings.avatar_url || settings.header_video_poster_url;
+  const socials = Array.isArray(settings.social_links) ? settings.social_links : [];
+  const instagram = socials.find((social) => /instagram/i.test(`${social.platform || ""} ${social.url || ""}`));
+  let handle = "";
+  try {
+    const url = new URL((instagram == null ? void 0 : instagram.url) || "");
+    if (/^(www\.)?instagram\.com$/i.test(url.hostname)) {
+      const name = url.pathname.split("/").filter(Boolean)[0];
+      if (name && /^[\w.]+$/.test(name) && !["p", "reel", "reels", "stories", "explore"].includes(name)) handle = `@${name}`;
+    }
+  } catch {
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "hvj-page", "data-creator-layout": "reference", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime.jsx)("style", { children: `
+      .hvj-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:16px 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:#0b0b0b;color:#f2f2f2}
+      .hvj-photo{position:relative;width:100%;max-width:360px;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:#161616}
+      .hvj-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+      .hvj-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.78) 100%)}
+      .hvj-identity{position:absolute;left:0;right:0;bottom:0;padding:0 18px 20px;text-align:center}
+      .hvj-name{font-size:24px;font-weight:700;margin:0;display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em;line-height:normal;color:#f2f2f2}
+      .hvj-handle{font-size:13px;color:rgba(255,255,255,.72);margin:4px 0 0;line-height:normal}
+      .hvj-tag{font-size:13px;color:rgba(255,255,255,.8);margin:8px 0 0;line-height:normal}
+      .hvj-button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:12px 22px;border-radius:999px;background:#fff;color:#0b0b0b;font-weight:600;font-size:15px;line-height:normal;text-decoration:none;border:0;cursor:pointer;width:100%;max-width:360px}
+      .hvj-button:focus-visible,.hvj-social:focus-visible{outline:2px solid #fff;outline-offset:4px}
+      .hvj-socials{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:18px}
+      .hvj-social{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:999px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;text-decoration:none}
+      .hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:normal;color:rgba(255,255,255,.72);margin:14px 0 0}
+      .hvj-footer{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;line-height:normal;color:rgba(255,255,255,.6);text-align:center}
+      .hvj-footer a{color:rgba(255,255,255,.75);text-decoration:none}.hvj-footer p{margin:0}
+    ` }),
+    /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "hvj-photo", children: [
+      photo && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", { src: photo, alt: settings.display_name || "Creator", loading: "eager", decoding: "async", style: { objectPosition: settings.header_video_focus || "center" } }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "hvj-shade" }),
+      /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "hvj-identity", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h1", { className: "hvj-name", children: [
+          settings.display_name,
+          stage === "join" && settings.verified_badge && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("svg", { "aria-label": "Verified", role: "img", width: "18", height: "18", viewBox: "0 0 24 24", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { fill: "#1d9bf0", d: "m12 1 2.9 2.1 3.6.2 1.3 3.4 2.8 2.3-.9 3.5.9 3.5-2.8 2.3-1.3 3.4-3.6.2L12 23l-2.9-2.1-3.6-.2-1.3-3.4L1.4 15l.9-3.5-.9-3.5 2.8-2.3 1.3-3.4 3.6-.2Z" }),
+            /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { fill: "none", stroke: "#fff", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", d: "m7 12 3 3 7-7" })
+          ] })
+        ] }),
+        handle && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-handle", children: handle }),
+        stage === "intro" && settings.bio && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-tag", children: settings.bio })
+      ] })
+    ] }),
+    stage === "join" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-sub", children: "More of my content. Tap below to chat with me." }),
+    [...settings.cta_cards || []].sort((a, b) => (a.order || 0) - (b.order || 0)).map((card) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.default.Fragment, { children: renderAction(card, "hvj-button") }, card.id)),
+    stage === "intro" && socials.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("nav", { className: "hvj-socials", "aria-label": "Socials", children: socials.map((social, index) => {
+      const platform = String(social.platform || "").toLowerCase();
+      const icon = /instagram/.test(platform) ? "mdi:instagram" : /snapchat/.test(platform) ? "ri:snapchat-fill" : /tiktok/.test(platform) ? "ic:baseline-tiktok" : social.icon || "mdi:link";
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.default.Fragment, { children: renderSocial(social, "hvj-social", /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react2.Icon, { icon, width: 22, height: 22 })) }, social.id || index);
+    }) }),
+    pageFooter
+  ] });
+}
+
 // src/landing-page-viewer.tsx
-var import_react21 = __toESM(require("react"));
-var import_react22 = require("@heroui/react");
-var import_react23 = require("@heroui/react");
+var import_react23 = __toESM(require("react"));
 var import_react24 = require("@heroui/react");
 var import_react25 = require("@heroui/react");
-var import_react26 = require("@iconify/react");
+var import_react26 = require("@heroui/react");
+var import_react27 = require("@heroui/react");
+var import_react28 = require("@iconify/react");
 var import_framer_motion10 = require("framer-motion");
 
 // src/modern-audio-player.tsx
-var import_react = require("react");
-var import_react2 = require("@iconify/react");
+var import_react3 = require("react");
+var import_react4 = require("@iconify/react");
 var import_framer_motion = require("framer-motion");
 var import_wavesurfer = __toESM(require("wavesurfer.js"));
-var import_jsx_runtime = require("react/jsx-runtime");
+var import_jsx_runtime2 = require("react/jsx-runtime");
 function ModernAudioPlayer({ src, theme = "dark" }) {
-  const [isPlaying, setIsPlaying] = (0, import_react.useState)(false);
-  const [isLoading, setIsLoading] = (0, import_react.useState)(true);
-  const [duration, setDuration] = (0, import_react.useState)(0);
-  const [currentTime, setCurrentTime] = (0, import_react.useState)(0);
-  const waveformRef = (0, import_react.useRef)(null);
-  const wavesurferRef = (0, import_react.useRef)(null);
-  const isDestroyedRef = (0, import_react.useRef)(false);
+  const [isPlaying, setIsPlaying] = (0, import_react3.useState)(false);
+  const [isLoading, setIsLoading] = (0, import_react3.useState)(true);
+  const [duration, setDuration] = (0, import_react3.useState)(0);
+  const [currentTime, setCurrentTime] = (0, import_react3.useState)(0);
+  const waveformRef = (0, import_react3.useRef)(null);
+  const wavesurferRef = (0, import_react3.useRef)(null);
+  const isDestroyedRef = (0, import_react3.useRef)(false);
   const isLightMode = theme === "light";
   const brandAccent = "#5EC8D6";
-  (0, import_react.useEffect)(() => {
+  (0, import_react3.useEffect)(() => {
     if (!waveformRef.current) return;
     isDestroyedRef.current = false;
     const wavesurfer = import_wavesurfer.default.create({
@@ -204,7 +258,7 @@ function ModernAudioPlayer({ src, theme = "dark" }) {
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
     "div",
     {
       className: "flex items-center gap-3 p-3 rounded-2xl backdrop-blur-sm",
@@ -212,7 +266,7 @@ function ModernAudioPlayer({ src, theme = "dark" }) {
         backgroundColor: isLightMode ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
           import_framer_motion.motion.button,
           {
             whileTap: { scale: 0.95 },
@@ -223,8 +277,8 @@ function ModernAudioPlayer({ src, theme = "dark" }) {
               backgroundColor: brandAccent,
               boxShadow: "0 10px 24px rgba(94, 200, 214, 0.22)"
             },
-            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
-              import_react2.Icon,
+            children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
+              import_react4.Icon,
               {
                 icon: isPlaying ? "solar:pause-bold" : "solar:play-bold",
                 width: 20,
@@ -234,8 +288,8 @@ function ModernAudioPlayer({ src, theme = "dark" }) {
             )
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { className: "flex-1 flex items-center gap-3", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "flex-1 flex items-center gap-3", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "div",
             {
               ref: waveformRef,
@@ -243,7 +297,7 @@ function ModernAudioPlayer({ src, theme = "dark" }) {
               style: { minHeight: "32px" }
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
             "span",
             {
               className: "text-xs font-medium tabular-nums min-w-[35px]",
@@ -258,25 +312,25 @@ function ModernAudioPlayer({ src, theme = "dark" }) {
 }
 
 // src/ctr-mechanisms/cta-card-with-mechanisms.tsx
-var import_react18 = require("react");
-var import_react19 = require("@heroui/react");
-var import_react20 = require("@iconify/react");
+var import_react20 = require("react");
+var import_react21 = require("@heroui/react");
+var import_react22 = require("@iconify/react");
 
 // src/ctr-mechanisms/click-to-reveal.tsx
-var import_react3 = require("react");
-var import_react4 = require("@heroui/react");
-var import_react5 = require("@heroui/react");
+var import_react5 = require("react");
+var import_react6 = require("@heroui/react");
+var import_react7 = require("@heroui/react");
 var import_framer_motion2 = require("framer-motion");
-var import_react6 = require("@iconify/react");
-var import_jsx_runtime2 = require("react/jsx-runtime");
+var import_react8 = require("@iconify/react");
+var import_jsx_runtime3 = require("react/jsx-runtime");
 function ClickToReveal({
   clicksRequired,
   buttonText,
   onReveal,
   children
 }) {
-  const [clickCount, setClickCount] = (0, import_react3.useState)(0);
-  const [isRevealed, setIsRevealed] = (0, import_react3.useState)(false);
+  const [clickCount, setClickCount] = (0, import_react5.useState)(0);
+  const [isRevealed, setIsRevealed] = (0, import_react5.useState)(false);
   const handleClick = () => {
     const newCount = clickCount + 1;
     setClickCount(newCount);
@@ -287,35 +341,35 @@ function ClickToReveal({
   };
   const progress = clickCount / clicksRequired * 100;
   if (isRevealed) {
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_jsx_runtime2.Fragment, { children });
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_jsx_runtime3.Fragment, { children });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "absolute inset-0 bg-black/10 z-[5] flex flex-col items-center justify-center px-4 py-4 rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "absolute inset-0 bg-black/10 z-[5] flex flex-col items-center justify-center px-4 py-4 rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
       import_framer_motion2.motion.div,
       {
         animate: clickCount > 0 ? { scale: [1, 1.1, 1] } : {},
         transition: { duration: 0.3 },
         className: "text-center space-y-2",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            import_react6.Icon,
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            import_react8.Icon,
             {
               icon: "solar:click-bold-duotone",
               width: 40,
               className: "text-white mx-auto drop-shadow-lg"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("div", { className: "space-y-1", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("p", { className: "text-white font-semibold text-base drop-shadow-md", children: buttonText }),
-            /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)("p", { className: "text-white/80 text-xs drop-shadow-sm", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "space-y-1", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "text-white font-semibold text-base drop-shadow-md", children: buttonText }),
+            /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("p", { className: "text-white/80 text-xs drop-shadow-sm", children: [
               clicksRequired - clickCount,
               " more ",
               clicksRequired - clickCount === 1 ? "tap" : "taps",
               " to unlock"
             ] })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(
-            import_react4.Button,
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+            import_react6.Button,
             {
               size: "md",
               onPress: handleClick,
@@ -329,8 +383,8 @@ function ClickToReveal({
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(
-            import_react5.Progress,
+          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            import_react7.Progress,
             {
               value: progress,
               className: "max-w-[200px]",
@@ -344,24 +398,24 @@ function ClickToReveal({
         ]
       }
     ) }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", { className: "opacity-30 pointer-events-none", children })
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "opacity-30 pointer-events-none", children })
   ] });
 }
 
 // src/ctr-mechanisms/countdown-reveal.tsx
-var import_react7 = require("react");
+var import_react9 = require("react");
 var import_framer_motion3 = require("framer-motion");
-var import_react8 = require("@iconify/react");
-var import_jsx_runtime3 = require("react/jsx-runtime");
+var import_react10 = require("@iconify/react");
+var import_jsx_runtime4 = require("react/jsx-runtime");
 function CountdownReveal({
   durationSeconds,
   message,
   onReveal,
   children
 }) {
-  const [secondsLeft, setSecondsLeft] = (0, import_react7.useState)(durationSeconds);
-  const [isRevealed, setIsRevealed] = (0, import_react7.useState)(false);
-  (0, import_react7.useEffect)(() => {
+  const [secondsLeft, setSecondsLeft] = (0, import_react9.useState)(durationSeconds);
+  const [isRevealed, setIsRevealed] = (0, import_react9.useState)(false);
+  (0, import_react9.useEffect)(() => {
     if (secondsLeft <= 0) {
       setIsRevealed(true);
       onReveal();
@@ -373,27 +427,27 @@ function CountdownReveal({
     return () => clearTimeout(timer);
   }, [secondsLeft]);
   if (isRevealed) {
-    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_jsx_runtime3.Fragment, { children });
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "absolute inset-0  bg-black/10 z-[5] flex flex-col items-center justify-center px-4 py-3 rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "absolute inset-0  bg-black/10 z-[5] flex flex-col items-center justify-center px-4 py-3 rounded-xl", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
       import_framer_motion3.motion.div,
       {
         animate: { scale: [1, 1.05, 1] },
         transition: { duration: 1, repeat: Infinity },
         className: "text-center space-y-1.5",
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-            import_react8.Icon,
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+            import_react10.Icon,
             {
               icon: "solar:clock-circle-bold-duotone",
               width: 36,
               className: "text-white mx-auto drop-shadow-lg"
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "space-y-0.5", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "text-white font-semibold text-sm drop-shadow-md", children: message }),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "space-y-0.5", children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "text-white font-semibold text-sm drop-shadow-md", children: message }),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
               import_framer_motion3.motion.div,
               {
                 initial: { scale: 1.2, opacity: 0 },
@@ -403,20 +457,20 @@ function CountdownReveal({
               },
               secondsLeft
             ),
-            /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "text-white/80 text-xs drop-shadow-sm", children: "seconds remaining..." })
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { className: "text-white/80 text-xs drop-shadow-sm", children: "seconds remaining..." })
           ] })
         ]
       }
     ) }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "opacity-30 pointer-events-none", children })
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: "opacity-30 pointer-events-none", children })
   ] });
 }
 
 // src/ctr-mechanisms/scarcity-badge.tsx
-var import_react9 = require("@heroui/react");
-var import_react10 = require("@iconify/react");
+var import_react11 = require("@heroui/react");
+var import_react12 = require("@iconify/react");
 var import_framer_motion4 = require("framer-motion");
-var import_jsx_runtime4 = require("react/jsx-runtime");
+var import_jsx_runtime5 = require("react/jsx-runtime");
 function ScarcityBadge({
   type,
   count,
@@ -430,14 +484,14 @@ function ScarcityBadge({
     }
     return isSlots ? `Only ${count}/${total} left!` : `${count} watching now`;
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: isSlots ? /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_jsx_runtime5.Fragment, { children: isSlots ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
     import_framer_motion4.motion.div,
     {
       initial: { opacity: 0, scale: 0.8 },
       animate: { opacity: 1, scale: 1 },
       className: "absolute top-2 left-2 z-[10]",
-      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        import_react9.Chip,
+      children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        import_react11.Chip,
         {
           size: "sm",
           variant: "flat",
@@ -445,19 +499,19 @@ function ScarcityBadge({
             base: "bg-black/70 text-white border border-white/15 shadow-[0_8px_22px_rgba(0,0,0,0.35)] backdrop-blur-md",
             content: "font-semibold"
           },
-          startContent: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_react10.Icon, { icon: "solar:fire-bold", width: 14 }),
+          startContent: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_react12.Icon, { icon: "solar:fire-bold", width: 14 }),
           children: getDisplayMessage()
         }
       )
     }
-  ) : /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+  ) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
     import_framer_motion4.motion.div,
     {
       initial: { opacity: 0, scale: 0.8 },
       animate: { opacity: 1, scale: 1 },
       className: "absolute top-2 right-2 z-[10]",
-      children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
-        import_react9.Chip,
+      children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        import_react11.Chip,
         {
           variant: "flat",
           size: "sm",
@@ -465,7 +519,7 @@ function ScarcityBadge({
             base: "bg-black/70 text-white border border-white/15 shadow-[0_8px_22px_rgba(0,0,0,0.35)] backdrop-blur-md",
             content: "font-semibold"
           },
-          startContent: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { className: "flex items-center", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+          startContent: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "flex items-center", children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
             import_framer_motion4.motion.span,
             {
               animate: { opacity: [1, 0.3, 1] },
@@ -481,27 +535,27 @@ function ScarcityBadge({
 }
 
 // src/ctr-mechanisms/blur-overlay.tsx
-var import_react11 = require("react");
-var import_react12 = require("@heroui/react");
+var import_react13 = require("react");
+var import_react14 = require("@heroui/react");
 var import_framer_motion5 = require("framer-motion");
-var import_react13 = require("@iconify/react");
-var import_jsx_runtime5 = require("react/jsx-runtime");
+var import_react15 = require("@iconify/react");
+var import_jsx_runtime6 = require("react/jsx-runtime");
 function BlurOverlay({
   blurAmount,
   teaserText,
   onReveal,
   children
 }) {
-  const [isRevealed, setIsRevealed] = (0, import_react11.useState)(false);
+  const [isRevealed, setIsRevealed] = (0, import_react13.useState)(false);
   const handleReveal = () => {
     setIsRevealed(true);
     onReveal();
   };
   if (isRevealed) {
-    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_jsx_runtime5.Fragment, { children });
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_jsx_runtime6.Fragment, { children });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       "div",
       {
         style: { filter: `blur(${blurAmount}px)` },
@@ -510,7 +564,7 @@ function BlurOverlay({
         children
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
       "div",
       {
         className: "absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-[5] flex flex-col items-center justify-center px-4 py-3 rounded-xl cursor-default",
@@ -519,32 +573,32 @@ function BlurOverlay({
         onPointerUp: (e) => e.stopPropagation(),
         onTouchStart: (e) => e.stopPropagation(),
         onTouchEnd: (e) => e.stopPropagation(),
-        children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
           import_framer_motion5.motion.div,
           {
             initial: { y: 20, opacity: 0 },
             animate: { y: 0, opacity: 1 },
             className: "text-center space-y-1.5",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-                import_react13.Icon,
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                import_react15.Icon,
                 {
                   icon: "solar:eye-bold-duotone",
                   width: 36,
                   className: "text-white mx-auto drop-shadow-lg"
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "space-y-0.5", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "text-white font-semibold text-sm drop-shadow-md", children: teaserText }),
-                /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "text-white/80 text-xs drop-shadow-sm", children: "Click below to reveal" })
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "space-y-0.5", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "text-white font-semibold text-sm drop-shadow-md", children: teaserText }),
+                /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "text-white/80 text-xs drop-shadow-sm", children: "Click below to reveal" })
               ] }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-                import_react12.Button,
+              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+                import_react14.Button,
                 {
                   size: "sm",
                   onPress: handleReveal,
                   className: "font-bold shadow-lg bg-[#5EC8D6] hover:bg-[#4FB6C4] text-[#08080A]",
-                  startContent: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(import_react13.Icon, { icon: "solar:eye-linear", width: 16 }),
+                  startContent: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_react15.Icon, { icon: "solar:eye-linear", width: 16 }),
                   children: "Reveal Now"
                 }
               )
@@ -557,20 +611,20 @@ function BlurOverlay({
 }
 
 // src/ctr-mechanisms/progress-bar-reveal.tsx
-var import_react14 = require("react");
-var import_react15 = require("@heroui/react");
+var import_react16 = require("react");
+var import_react17 = require("@heroui/react");
 var import_framer_motion6 = require("framer-motion");
-var import_react16 = require("@iconify/react");
-var import_jsx_runtime6 = require("react/jsx-runtime");
+var import_react18 = require("@iconify/react");
+var import_jsx_runtime7 = require("react/jsx-runtime");
 function ProgressBarReveal({
   durationSeconds,
   message,
   onReveal,
   children
 }) {
-  const [progress, setProgress] = (0, import_react14.useState)(0);
-  const [isRevealed, setIsRevealed] = (0, import_react14.useState)(false);
-  (0, import_react14.useEffect)(() => {
+  const [progress, setProgress] = (0, import_react16.useState)(0);
+  const [isRevealed, setIsRevealed] = (0, import_react16.useState)(false);
+  (0, import_react16.useEffect)(() => {
     const interval = 50;
     const totalSteps = durationSeconds * 1e3 / interval;
     const incrementPerStep = 100 / totalSteps;
@@ -591,22 +645,22 @@ function ProgressBarReveal({
     return () => clearInterval(timer);
   }, [durationSeconds]);
   if (isRevealed) {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_jsx_runtime6.Fragment, { children });
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_jsx_runtime7.Fragment, { children });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "absolute rounded-xl inset-0 backdrop-blur-sm bg-black/40 z-[5] flex items-center justify-center px-3 py-3", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_framer_motion6.motion.div, { className: "text-center space-y-1 w-full max-w-[210px] mx-auto", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-        import_react16.Icon,
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "relative overflow-hidden rounded-xl", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "absolute rounded-xl inset-0 backdrop-blur-sm bg-black/40 z-[5] flex items-center justify-center px-3 py-3", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_framer_motion6.motion.div, { className: "text-center space-y-1 w-full max-w-[210px] mx-auto", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        import_react18.Icon,
         {
           icon: "solar:hourglass-bold-duotone",
           width: 32,
           className: "text-white mx-auto drop-shadow-lg"
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "space-y-1", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "text-white font-semibold text-sm drop-shadow-md", children: message }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-          import_react15.Progress,
+      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: "space-y-1", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("p", { className: "text-white font-semibold text-sm drop-shadow-md", children: message }),
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          import_react17.Progress,
           {
             value: progress,
             className: "w-[150px] mx-auto",
@@ -617,23 +671,23 @@ function ProgressBarReveal({
             size: "sm"
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("p", { className: "text-white/80 text-[11px] drop-shadow-sm", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("p", { className: "text-white/80 text-[11px] drop-shadow-sm", children: [
           Math.round(progress),
           "% loaded..."
         ] })
       ] })
     ] }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "opacity-30 pointer-events-none", children })
+    /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "opacity-30 pointer-events-none", children })
   ] });
 }
 
 // src/ctr-mechanisms/confetti-effect.tsx
-var import_react17 = require("react");
+var import_react19 = require("react");
 var import_framer_motion7 = require("framer-motion");
-var import_jsx_runtime7 = require("react/jsx-runtime");
+var import_jsx_runtime8 = require("react/jsx-runtime");
 function ConfettiEffect({ trigger, duration = 3e3 }) {
-  const [particles, setParticles] = (0, import_react17.useState)([]);
-  (0, import_react17.useEffect)(() => {
+  const [particles, setParticles] = (0, import_react19.useState)([]);
+  (0, import_react19.useEffect)(() => {
     if (!trigger) return;
     const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A", "#98D8C8", "#F7DC6F"];
     const newParticles = Array.from({ length: 30 }, (_, i) => ({
@@ -648,7 +702,7 @@ function ConfettiEffect({ trigger, duration = 3e3 }) {
     return () => clearTimeout(timer);
   }, [trigger, duration]);
   if (particles.length === 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: "fixed inset-0 pointer-events-none z-50 overflow-hidden", children: particles.map((particle) => /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("div", { className: "fixed inset-0 pointer-events-none z-50 overflow-hidden", children: particles.map((particle) => /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
     import_framer_motion7.motion.div,
     {
       initial: {
@@ -676,15 +730,15 @@ function ConfettiEffect({ trigger, duration = 3e3 }) {
 
 // src/ctr-mechanisms/cta-card-with-mechanisms.tsx
 var import_framer_motion8 = require("framer-motion");
-var import_jsx_runtime8 = require("react/jsx-runtime");
+var import_jsx_runtime9 = require("react/jsx-runtime");
 function CTACardWithMechanisms({
   card,
   onReveal,
   children
 }) {
   var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
-  const [isRevealed, setIsRevealed] = (0, import_react18.useState)(false);
-  const [showConfetti, setShowConfetti] = (0, import_react18.useState)(false);
+  const [isRevealed, setIsRevealed] = (0, import_react20.useState)(false);
+  const [showConfetti, setShowConfetti] = (0, import_react20.useState)(false);
   const mechanisms = card.ctr_mechanisms;
   const handleReveal = () => {
     var _a2;
@@ -700,7 +754,7 @@ function CTACardWithMechanisms({
       ${mechanisms.visual_effects.pulse_animation ? "animate-pulse" : ""}
       ${mechanisms.visual_effects.glow_effect ? "shadow-lg shadow-[rgba(94,200,214,0.38)]" : ""}
     `.trim();
-    content = /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    content = /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       import_framer_motion8.motion.div,
       {
         animate: mechanisms.visual_effects.pulse_animation ? { scale: [1, 1.02, 1] } : {},
@@ -711,7 +765,7 @@ function CTACardWithMechanisms({
     );
   }
   if (((_c = mechanisms == null ? void 0 : mechanisms.click_to_reveal) == null ? void 0 : _c.enabled) && !isRevealed) {
-    content = /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    content = /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       ClickToReveal,
       {
         clicksRequired: mechanisms.click_to_reveal.clicks_required,
@@ -721,7 +775,7 @@ function CTACardWithMechanisms({
       }
     );
   } else if (((_d = mechanisms == null ? void 0 : mechanisms.progress_bar) == null ? void 0 : _d.enabled) && !isRevealed) {
-    content = /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    content = /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       ProgressBarReveal,
       {
         durationSeconds: mechanisms.progress_bar.duration_seconds,
@@ -731,7 +785,7 @@ function CTACardWithMechanisms({
       }
     );
   } else if (((_e = mechanisms == null ? void 0 : mechanisms.countdown_timer) == null ? void 0 : _e.enabled) && !isRevealed) {
-    content = /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    content = /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       CountdownReveal,
       {
         durationSeconds: mechanisms.countdown_timer.duration_seconds,
@@ -741,7 +795,7 @@ function CTACardWithMechanisms({
       }
     );
   } else if (((_f = mechanisms == null ? void 0 : mechanisms.blur_preview) == null ? void 0 : _f.enabled) && !isRevealed) {
-    content = /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    content = /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       BlurOverlay,
       {
         blurAmount: mechanisms.blur_preview.blur_amount,
@@ -758,8 +812,8 @@ function CTACardWithMechanisms({
     (_l = mechanisms == null ? void 0 : mechanisms.live_viewers) == null ? void 0 : _l.enabled,
     (_m = mechanisms == null ? void 0 : mechanisms.exclusive_badge) == null ? void 0 : _m.enabled
   ].filter(Boolean).length > 1;
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)("div", { className: "relative overflow-hidden rounded-2xl", children: [
-    showBadges && ((_n = mechanisms == null ? void 0 : mechanisms.limited_slots) == null ? void 0 : _n.enabled) && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "relative overflow-hidden rounded-2xl", children: [
+    showBadges && ((_n = mechanisms == null ? void 0 : mechanisms.limited_slots) == null ? void 0 : _n.enabled) && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       ScarcityBadge,
       {
         type: "slots",
@@ -768,21 +822,21 @@ function CTACardWithMechanisms({
         message: mechanisms.limited_slots.message
       }
     ),
-    showBadges && ((_o = mechanisms == null ? void 0 : mechanisms.live_viewers) == null ? void 0 : _o.enabled) && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    showBadges && ((_o = mechanisms == null ? void 0 : mechanisms.live_viewers) == null ? void 0 : _o.enabled) && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       ScarcityBadge,
       {
         type: "viewers",
         count: mechanisms.live_viewers.count
       }
     ),
-    showBadges && ((_p = mechanisms == null ? void 0 : mechanisms.exclusive_badge) == null ? void 0 : _p.enabled) && /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    showBadges && ((_p = mechanisms == null ? void 0 : mechanisms.exclusive_badge) == null ? void 0 : _p.enabled) && /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
       import_framer_motion8.motion.div,
       {
         initial: { opacity: 0, scale: 0.8 },
         animate: { opacity: 1, scale: 1 },
         className: `absolute z-[10] ${hasMultipleBadges ? "bottom-3 left-3" : "top-3 left-3"}`,
-        children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-          import_react19.Chip,
+        children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          import_react21.Chip,
           {
             color: "default",
             size: "sm",
@@ -791,8 +845,8 @@ function CTACardWithMechanisms({
               base: "border border-white/10 bg-black/70 px-1.5 text-white shadow-[0_8px_22px_rgba(0,0,0,0.35)] backdrop-blur-md",
               content: "text-[12px] font-semibold text-white"
             },
-            startContent: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
-              import_react20.Icon,
+            startContent: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+              import_react22.Icon,
               {
                 icon: "solar:crown-bold",
                 width: 14,
@@ -805,14 +859,14 @@ function CTACardWithMechanisms({
       }
     ),
     content,
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(ConfettiEffect, { trigger: showConfetti })
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(ConfettiEffect, { trigger: showConfetti })
   ] });
 }
 
 // src/ctr-mechanisms/age-confirmation-modal.tsx
 var import_framer_motion9 = require("framer-motion");
 var import_components = require("shadcn-glass-ui/components");
-var import_jsx_runtime9 = require("react/jsx-runtime");
+var import_jsx_runtime10 = require("react/jsx-runtime");
 function AgeConfirmationModal({
   isOpen,
   onConfirm,
@@ -852,25 +906,25 @@ function AgeConfirmationModal({
     }
   };
   if (!isOpen) {
-    return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_jsx_runtime9.Fragment, { children });
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "relative overflow-hidden rounded-2xl", style: roundedClipStyle, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: "pointer-events-none opacity-20", children }),
-    /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "relative overflow-hidden rounded-2xl", style: roundedClipStyle, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "pointer-events-none opacity-20", children }),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
       "div",
       {
         className: "absolute inset-0 bg-gradient-to-t from-black via-black/90 to-black/75 z-[5] flex flex-col items-center justify-center px-4 py-3 rounded-2xl",
         style: roundedClipStyle,
-        children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+        children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
           import_framer_motion9.motion.div,
           {
             initial: { y: 10, opacity: 0 },
             animate: { y: 0, opacity: 1 },
             className: "flex flex-col items-center text-center",
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("p", { className: "text-center text-sm font-semibold text-white drop-shadow-md", children: "Adult Content (18+)" }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: "mt-2 flex justify-center gap-2.5", style: glassVars, children: [
-                confirmHref ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "text-center text-sm font-semibold text-white drop-shadow-md", children: "Adult Content (18+)" }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "mt-2 flex justify-center gap-2.5", style: glassVars, children: [
+                confirmHref ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                   "a",
                   {
                     href: confirmHref,
@@ -880,7 +934,7 @@ function AgeConfirmationModal({
                     className: confirmButtonClass,
                     children: "I'm 18+"
                   }
-                ) : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                   "button",
                   {
                     type: "button",
@@ -889,7 +943,7 @@ function AgeConfirmationModal({
                     children: "I'm 18+"
                   }
                 ),
-                /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
                   import_components.ButtonGlass,
                   {
                     className: "h-9 min-w-[72px] border-0 px-4 text-sm font-bold",
@@ -909,7 +963,7 @@ function AgeConfirmationModal({
 }
 
 // src/landing-page-viewer.tsx
-var import_jsx_runtime10 = require("react/jsx-runtime");
+var import_jsx_runtime11 = require("react/jsx-runtime");
 var CONTENT_VERTICAL_OFFSET_KEY = "__content_vertical_offset";
 var MIN_CONTENT_VERTICAL_OFFSET = 0;
 var MAX_CONTENT_VERTICAL_OFFSET = 320;
@@ -929,8 +983,8 @@ function CTAUrgencyBadge({
   className = ""
 }) {
   const safeDuration = Math.max(1, Math.floor(durationSeconds || 0));
-  const [remaining, setRemaining] = (0, import_react21.useState)(safeDuration);
-  (0, import_react21.useEffect)(() => {
+  const [remaining, setRemaining] = (0, import_react23.useState)(safeDuration);
+  (0, import_react23.useEffect)(() => {
     setRemaining(safeDuration);
     const startedAt = Date.now();
     const interval = window.setInterval(() => {
@@ -945,11 +999,11 @@ function CTAUrgencyBadge({
   const time = `${hours > 0 ? `${hours}h ` : ""}${minutes}m ${String(seconds).padStart(2, "0")}s`;
   const fallbackText = `${label || "FREE"} ends in ${time}`;
   const text = message && message.trim().length > 0 ? message.replace(/\{time\}/gi, time).replace(/\{label\}/gi, label || "FREE") : fallbackText;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
     "div",
     {
       className: `mt-2 inline-flex max-w-full items-center px-1 py-0.5 text-sm font-extrabold leading-none ${className}`,
-      children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
         "span",
         {
           className: "truncate text-[#5EC8D6]",
@@ -1047,11 +1101,11 @@ function LandingPageViewer({
   visitorLocationLabel = null
 }) {
   var _a, _b, _c;
-  const [showingAgeConfirmationFor, setShowingAgeConfirmationFor] = (0, import_react21.useState)(null);
-  const [activeGalleryIndex, setActiveGalleryIndex] = (0, import_react21.useState)(0);
-  const [lightboxUrl, setLightboxUrl] = (0, import_react21.useState)(null);
-  const galleryTouchStartX = (0, import_react21.useRef)(null);
-  const viewerRootRef = (0, import_react21.useRef)(null);
+  const [showingAgeConfirmationFor, setShowingAgeConfirmationFor] = (0, import_react23.useState)(null);
+  const [activeGalleryIndex, setActiveGalleryIndex] = (0, import_react23.useState)(0);
+  const [lightboxUrl, setLightboxUrl] = (0, import_react23.useState)(null);
+  const galleryTouchStartX = (0, import_react23.useRef)(null);
+  const viewerRootRef = (0, import_react23.useRef)(null);
   const protectPublicContent = !isPreview;
   const contentProtectionStyle = protectPublicContent ? {
     paddingTop: "env(safe-area-inset-top)",
@@ -1065,13 +1119,13 @@ function LandingPageViewer({
     event.preventDefault();
     event.stopPropagation();
   };
-  const [enableMotionVideo, setEnableMotionVideo] = (0, import_react21.useState)(false);
-  const [heroVideoReady, setHeroVideoReady] = (0, import_react21.useState)(false);
-  const [avatarVideoReady, setAvatarVideoReady] = (0, import_react21.useState)(false);
-  const heroVideoRef = (0, import_react21.useRef)(null);
-  const avatarVideoRef = (0, import_react21.useRef)(null);
+  const [enableMotionVideo, setEnableMotionVideo] = (0, import_react23.useState)(false);
+  const [heroVideoReady, setHeroVideoReady] = (0, import_react23.useState)(false);
+  const [avatarVideoReady, setAvatarVideoReady] = (0, import_react23.useState)(false);
+  const heroVideoRef = (0, import_react23.useRef)(null);
+  const avatarVideoRef = (0, import_react23.useRef)(null);
   const heroPoster = settings.header_video_poster_url || settings.avatar_url || void 0;
-  const mode = settings.__creator_join_text_only === true ? "text" : settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background) ? "video_background" : settings.profile_display_mode || "full";
+  const mode = settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background) ? "video_background" : settings.profile_display_mode || "full";
   const isFullMode = mode === "full";
   const isVideoMode = mode === "video";
   const isVideoBackgroundMode = mode === "video_background";
@@ -1079,7 +1133,7 @@ function LandingPageViewer({
   const hideVideoBackgroundAvatar = isVideoBackgroundMode && !!((_b = settings.section_spacing) == null ? void 0 : _b.__profile_video_background_hide_avatar);
   const showAvatarMedia = mode === "avatar" || isVideoBackgroundMode && !hideVideoBackgroundAvatar;
   const usesAvatarProfile = mode === "avatar" || isVideoBackgroundMode;
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!heroPoster) return;
     const l = document.createElement("link");
     l.rel = "preload";
@@ -1094,7 +1148,7 @@ function LandingPageViewer({
       }
     };
   }, [heroPoster]);
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (isPreview) {
       setEnableMotionVideo(false);
       return;
@@ -1113,12 +1167,12 @@ function LandingPageViewer({
     settings.header_video_url,
     usesMotionVideo
   ]);
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!enableMotionVideo) return;
     setHeroVideoReady(false);
     setAvatarVideoReady(false);
   }, [enableMotionVideo]);
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!enableMotionVideo) return;
     const tryPlay = async () => {
       var _a2, _b2;
@@ -1142,7 +1196,7 @@ function LandingPageViewer({
     border: isLightMode ? "#e2e8f0" : "#27272a"
   };
   const brandAccent = "#5EC8D6";
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!protectPublicContent) return;
     const root = viewerRootRef.current;
     if (!root) return;
@@ -1404,7 +1458,7 @@ function LandingPageViewer({
     var _a2;
     if (!hasProfileSignals) return null;
     const signalClass = "inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-semibold leading-none sm:text-xs";
-    const divider = /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    const divider = /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "span",
       {
         "aria-hidden": "true",
@@ -1416,34 +1470,34 @@ function LandingPageViewer({
     const signals = [];
     if (settings.show_active_now) {
       signals.push(
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { className: signalClass, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: "halevora-active-dot h-2.5 w-2.5 rounded-full bg-[#22C55E]" }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { className: signalClass, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: "halevora-active-dot h-2.5 w-2.5 rounded-full bg-[#22C55E]" }),
           "Online"
         ] }, "active")
       );
     }
     if (settings.show_location && visitorLocationLabel) {
       signals.push(
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { className: signalClass, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_react26.Icon, { icon: "solar:map-point-bold", width: 14 }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { className: signalClass, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_react28.Icon, { icon: "solar:map-point-bold", width: 14 }),
           visitorLocationLabel
         ] }, "location")
       );
     }
     if (settings.show_response_time && ((_a2 = settings.response_time_text) == null ? void 0 : _a2.trim())) {
       signals.push(
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { className: signalClass, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_react26.Icon, { icon: "solar:clock-circle-bold", width: 14 }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { className: signalClass, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_react28.Icon, { icon: "solar:clock-circle-bold", width: 14 }),
           settings.response_time_text.trim()
         ] }, "response")
       );
     }
-    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
       "div",
       {
         className: "flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 text-center",
         style: { color: themeColors.textPrimary },
-        children: signals.map((signal, index) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_react21.default.Fragment, { children: signal }, index))
+        children: signals.map((signal, index) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_react23.default.Fragment, { children: signal }, index))
       }
     );
   };
@@ -1482,7 +1536,7 @@ function LandingPageViewer({
   const rawGallery = settings.gallery_images;
   const galleryImages = Array.isArray(rawGallery) ? rawGallery.slice(0, 6) : [];
   const hasGallery = galleryImages.length > 0;
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!lightboxUrl) return;
     const handler = (e) => {
       if (e.key === "Escape") {
@@ -1492,11 +1546,11 @@ function LandingPageViewer({
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [lightboxUrl]);
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!enableMotionVideo) return;
     setHeroVideoReady(false);
   }, [enableMotionVideo]);
-  (0, import_react21.useEffect)(() => {
+  (0, import_react23.useEffect)(() => {
     if (!enableMotionVideo) return;
     const hero = heroVideoRef.current;
     if (hero) {
@@ -1506,7 +1560,7 @@ function LandingPageViewer({
     hero == null ? void 0 : hero.play().catch(() => {
     });
   }, [enableMotionVideo]);
-  (0, import_react21.useEffect)(
+  (0, import_react23.useEffect)(
     () => {
       var _a2;
       if (isPreview) return;
@@ -1551,7 +1605,30 @@ function LandingPageViewer({
     return "h-[320px] md:h-[320px]";
   })();
   const heroHeightStyle = (isFullMode || isVideoMode) && settings.header_image_height ? { height: `${settings.header_image_height}px` } : void 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+  if (["intro", "join"].includes(settings.__creator_journey_stage)) {
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      "div",
+      {
+        ref: viewerRootRef,
+        "data-halevora-protected": protectPublicContent ? "true" : void 0,
+        onContextMenuCapture: preventContentSave,
+        onDragStartCapture: preventContentSave,
+        onDropCapture: preventContentSave,
+        style: contentProtectionStyle,
+        children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          CreatorJourneyLayout,
+          {
+            settings,
+            pageFooter,
+            renderAction: (card, className) => isPreview ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("button", { type: "button", className, onClick: () => onCtaActivate == null ? void 0 : onCtaActivate(card.url, () => {
+            }), children: card.title }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("a", { ...getNativeLinkProps(card.url, true), className, children: card.title }),
+            renderSocial: (social, className, icon) => isPreview ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("a", { href: social.url, className, "aria-label": social.platform || "Social profile", onClick: (event) => event.preventDefault(), children: icon }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("a", { ...getNativeLinkProps(social.url), className, "aria-label": social.platform || "Social profile", children: icon })
+          }
+        )
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
     "div",
     {
       ref: viewerRootRef,
@@ -1562,7 +1639,7 @@ function LandingPageViewer({
       className: `min-h-[100dvh] flex items-start ${isVideoBackgroundMode ? "md:items-start" : "md:items-center"} justify-center relative overflow-hidden`,
       style: contentProtectionStyle,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("style", { children: `
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("style", { children: `
           @keyframes halevoraCtaBounce {
             0%, 100% { transform: translateY(0) scale(1); }
             38% { transform: translateY(-7px) scale(1.026); }
@@ -1604,8 +1681,8 @@ function LandingPageViewer({
             display: none;
           }
         ` }),
-        (isFullMode || isVideoMode || isVideoBackgroundMode) && (heroPoster || usesMotionVideo && settings.header_video_url) ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "hidden md:block absolute inset-0 z-0 pointer-events-none overflow-hidden", children: [
-          usesMotionVideo && settings.header_video_url && enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+        (isFullMode || isVideoMode || isVideoBackgroundMode) && (heroPoster || usesMotionVideo && settings.header_video_url) ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "hidden md:block absolute inset-0 z-0 pointer-events-none overflow-hidden", children: [
+          usesMotionVideo && settings.header_video_url && enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             "video",
             {
               src: settings.header_video_url,
@@ -1618,7 +1695,7 @@ function LandingPageViewer({
               "aria-hidden": "true",
               className: "absolute inset-0 h-full w-full object-cover scale-110 opacity-55"
             }
-          ) : heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+          ) : heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             "img",
             {
               src: heroPoster,
@@ -1627,7 +1704,7 @@ function LandingPageViewer({
               className: `absolute inset-0 h-full w-full object-cover scale-110 opacity-65 ${usesMotionVideo ? "" : "blur-3xl"}`
             }
           ) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             "div",
             {
               className: "absolute inset-0",
@@ -1637,7 +1714,7 @@ function LandingPageViewer({
             }
           )
         ] }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
           "div",
           {
             className: isVideoBackgroundMode ? "halevora-landing-scroll relative z-10 min-h-[100dvh] w-full overflow-x-hidden flex flex-col" : "halevora-landing-scroll relative z-10 w-full max-w-[430px] md:min-h-[812px] md:shadow-2xl md:rounded-[2rem] overflow-x-hidden flex flex-col",
@@ -1646,8 +1723,8 @@ function LandingPageViewer({
               maxWidth: isVideoBackgroundMode ? void 0 : "430px"
             },
             children: [
-              isVideoBackgroundMode && settings.header_video_url ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "absolute inset-0 z-0 overflow-hidden", children: [
-                heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              isVideoBackgroundMode && settings.header_video_url ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "absolute inset-0 z-0 overflow-hidden", children: [
+                heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                   "img",
                   {
                     src: heroPoster,
@@ -1659,7 +1736,7 @@ function LandingPageViewer({
                     fetchPriority: "high"
                   }
                 ) : null,
-                enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                   "video",
                   {
                     ref: heroVideoRef,
@@ -1674,8 +1751,8 @@ function LandingPageViewer({
                     className: `absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${heroVideoReady ? "opacity-100" : "opacity-0"}`
                   }
                 ) : null,
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "absolute inset-0 bg-black/55" }),
-                /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "absolute inset-0 bg-black/55" }),
+                /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                   "div",
                   {
                     className: "absolute inset-x-0 bottom-0 h-56 pointer-events-none",
@@ -1685,7 +1762,7 @@ function LandingPageViewer({
                   }
                 )
               ] }) : null,
-              isFullMode || isVideoMode ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              isFullMode || isVideoMode ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                 import_framer_motion10.motion.div,
                 {
                   initial: { opacity: 0 },
@@ -1699,9 +1776,9 @@ function LandingPageViewer({
                       let focusClass = "object-center";
                       if (focus === "top") focusClass = "object-top";
                       else if (focus === "bottom") focusClass = "object-bottom";
-                      return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "relative w-full h-full overflow-hidden", children: [
-                          heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                      return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "relative w-full h-full overflow-hidden", children: [
+                          heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             "img",
                             {
                               src: heroPoster,
@@ -1712,7 +1789,7 @@ function LandingPageViewer({
                               fetchPriority: "high"
                             }
                           ) : null,
-                          enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             "video",
                             {
                               ref: heroVideoRef,
@@ -1728,7 +1805,7 @@ function LandingPageViewer({
                             }
                           ) : null
                         ] }),
-                        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                           "div",
                           {
                             className: "absolute inset-x-0 bottom-0 h-48 pointer-events-none",
@@ -1739,15 +1816,15 @@ function LandingPageViewer({
                         )
                       ] });
                     }
-                    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "w-full h-full bg-default-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                      import_react26.Icon,
+                    return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "w-full h-full bg-default-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                      import_react28.Icon,
                       {
                         icon: "solar:clapperboard-play-bold-duotone",
                         className: "w-16 h-16 text-default-300"
                       }
                     ) });
-                  })() : settings.avatar_url ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "relative w-full h-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                  })() : settings.avatar_url ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "relative w-full h-full overflow-hidden", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       "img",
                       {
                         src: settings.avatar_url,
@@ -1755,7 +1832,7 @@ function LandingPageViewer({
                         className: "w-full h-full object-cover object-center"
                       }
                     ) }),
-                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       "div",
                       {
                         className: "absolute inset-x-0 bottom-0 h-32 pointer-events-none",
@@ -1764,16 +1841,16 @@ function LandingPageViewer({
                         }
                       }
                     )
-                  ] }) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "w-full h-full bg-default-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                    import_react26.Icon,
+                  ] }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "w-full h-full bg-default-100 flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                    import_react28.Icon,
                     {
                       icon: "solar:user-bold-duotone",
                       className: "w-24 h-24 text-default-300"
                     }
                   ) })
                 }
-              ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "w-full pt-8" }),
-              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              ) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "w-full pt-8" }),
+              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                 "div",
                 {
                   className: `flex-1 flex flex-col items-center px-4 sm:px-6 md:px-8 relative z-10 ${pageFooter ? "pb-6" : "pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-16"}`,
@@ -1781,8 +1858,8 @@ function LandingPageViewer({
                     marginTop: isFullMode ? "0" : "0",
                     transform: contentVerticalOffset ? `translateY(${contentVerticalOffset}px)` : void 0
                   },
-                  children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "w-full max-w-md", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex flex-col items-center gap-4", children: [
-                    (isFullMode || isVideoMode) && isSectionEnabled("header") && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                  children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "w-full max-w-md", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex flex-col items-center gap-4", children: [
+                    (isFullMode || isVideoMode) && isSectionEnabled("header") && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                       import_framer_motion10.motion.div,
                       {
                         initial: { opacity: 0, y: 10 },
@@ -1793,8 +1870,8 @@ function LandingPageViewer({
                         )}`,
                         style: { order: getSectionOrder("header") },
                         children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center gap-2", children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center gap-2", children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                               "h1",
                               {
                                 className: "text-2xl sm:text-3xl font-bold",
@@ -1802,15 +1879,15 @@ function LandingPageViewer({
                                 children: settings.display_name || link.title || "Profile"
                               }
                             ),
-                            settings.verified_badge && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                              import_react26.Icon,
+                            settings.verified_badge && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                              import_react28.Icon,
                               {
                                 icon: "solar:verified-check-bold",
                                 width: 24,
                                 style: { color: brandAccent }
                               }
-                            ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                              import_react25.Chip,
+                            ) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                              import_react27.Chip,
                               {
                                 size: "sm",
                                 variant: "flat",
@@ -1818,8 +1895,8 @@ function LandingPageViewer({
                                   base: "bg-[#5EC8D6]/12 border border-[#5EC8D6]/25",
                                   content: "text-[#5EC8D6] font-semibold"
                                 },
-                                startContent: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                                  import_react26.Icon,
+                                startContent: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                                  import_react28.Icon,
                                   {
                                     icon: "solar:verified-check-bold",
                                     width: 16,
@@ -1831,7 +1908,7 @@ function LandingPageViewer({
                             ) })
                           ] }),
                           renderProfileSignals(),
-                          settings.show_domain_handle && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                          settings.show_domain_handle && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                             "p",
                             {
                               className: "text-sm",
@@ -1846,15 +1923,15 @@ function LandingPageViewer({
                         ]
                       }
                     ),
-                    showAvatarMedia && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                    showAvatarMedia && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       import_framer_motion10.motion.div,
                       {
                         initial: { scale: 0.8 },
                         animate: { scale: 1 },
                         transition: { delay: 0.1, duration: 0.3 },
                         className: "relative",
-                        children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "rounded-full", children: isVideoBackgroundMode && settings.header_video_url ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "relative h-32 w-32 overflow-hidden rounded-full bg-default-100", children: [
-                          heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                        children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "rounded-full", children: isVideoBackgroundMode && settings.header_video_url ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "relative h-32 w-32 overflow-hidden rounded-full bg-default-100", children: [
+                          heroPoster ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             "img",
                             {
                               src: heroPoster,
@@ -1865,7 +1942,7 @@ function LandingPageViewer({
                               fetchPriority: "high"
                             }
                           ) : null,
-                          enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             "video",
                             {
                               ref: avatarVideoRef,
@@ -1880,22 +1957,22 @@ function LandingPageViewer({
                               className: "absolute inset-0 h-full w-full object-cover"
                             }
                           ) : null,
-                          !heroPoster && !enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "flex h-full w-full items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                            import_react26.Icon,
+                          !heroPoster && !enableMotionVideo ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex h-full w-full items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                            import_react28.Icon,
                             {
                               icon: "solar:clapperboard-play-bold-duotone",
                               className: "h-16 w-16 text-default-500"
                             }
                           ) }) : null
-                        ] }) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                          import_react22.Avatar,
+                        ] }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                          import_react24.Avatar,
                           {
                             src: settings.avatar_url || void 0,
                             alt: settings.display_name || link.title || "Profile",
                             className: "w-32 h-32 text-large",
                             showFallback: true,
-                            fallback: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                              import_react26.Icon,
+                            fallback: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                              import_react28.Icon,
                               {
                                 icon: "solar:user-bold-duotone",
                                 className: "w-20 h-20 text-default-500"
@@ -1905,7 +1982,7 @@ function LandingPageViewer({
                         ) })
                       }
                     ),
-                    usesAvatarProfile && isSectionEnabled("header") && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                    usesAvatarProfile && isSectionEnabled("header") && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                       import_framer_motion10.motion.div,
                       {
                         initial: { opacity: 0, y: 10 },
@@ -1916,8 +1993,8 @@ function LandingPageViewer({
                         )}`,
                         style: { order: getSectionOrder("header") },
                         children: [
-                          /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center gap-2", children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center gap-2", children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                               "h1",
                               {
                                 className: "text-2xl sm:text-3xl font-bold",
@@ -1925,15 +2002,15 @@ function LandingPageViewer({
                                 children: settings.display_name || link.title || "Profile"
                               }
                             ),
-                            settings.verified_badge && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                              import_react26.Icon,
+                            settings.verified_badge && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                              import_react28.Icon,
                               {
                                 icon: "solar:verified-check-bold",
                                 width: 24,
                                 style: { color: brandAccent }
                               }
-                            ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                              import_react25.Chip,
+                            ) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                              import_react27.Chip,
                               {
                                 size: "sm",
                                 variant: "flat",
@@ -1941,8 +2018,8 @@ function LandingPageViewer({
                                   base: "bg-[#5EC8D6]/12 border border-[#5EC8D6]/25",
                                   content: "text-[#5EC8D6] font-semibold"
                                 },
-                                startContent: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                                  import_react26.Icon,
+                                startContent: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                                  import_react28.Icon,
                                   {
                                     icon: "solar:verified-check-bold",
                                     width: 16,
@@ -1954,7 +2031,7 @@ function LandingPageViewer({
                             ) })
                           ] }),
                           renderProfileSignals(),
-                          settings.show_domain_handle && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                          settings.show_domain_handle && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                             "p",
                             {
                               className: "text-sm",
@@ -1969,7 +2046,7 @@ function LandingPageViewer({
                         ]
                       }
                     ),
-                    isSectionEnabled("social_block") && (settings.social_links && settings.social_links.length > 0 || settings.show_follower_count && (settings.follower_count || 0) > 0) && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                    isSectionEnabled("social_block") && (settings.social_links && settings.social_links.length > 0 || settings.show_follower_count && (settings.follower_count || 0) > 0) && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                       "div",
                       {
                         className: `flex flex-col items-center gap-2 ${getSectionSpacingClass(
@@ -1977,7 +2054,7 @@ function LandingPageViewer({
                         )}`,
                         style: { order: getSectionOrder("social_block") },
                         children: [
-                          settings.social_links && settings.social_links.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          settings.social_links && settings.social_links.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             import_framer_motion10.motion.div,
                             {
                               initial: { opacity: 0 },
@@ -1988,8 +2065,8 @@ function LandingPageViewer({
                                 var _a2;
                                 const isMono = isMonochromeSocialIcon(social);
                                 const isSnapchat = isSnapchatSocialIcon(social);
-                                return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                                  import_react24.Button,
+                                return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                                  import_react26.Button,
                                   {
                                     as: "a",
                                     href: (_a2 = social.url) != null ? _a2 : "",
@@ -2005,8 +2082,8 @@ function LandingPageViewer({
                                     size: "sm",
                                     variant: "light",
                                     className: `h-10 w-10 min-w-10 rounded-full bg-white p-0 shadow-[0_10px_24px_rgba(0,0,0,0.28)] ring-1 ring-black/5 transition-transform hover:scale-110 ${isSnapchat ? "text-[#111111] hover:bg-[#111111] hover:text-[#FFFC00]" : isMono ? "text-[#111111] hover:bg-[#111111] hover:text-white" : "text-[#111111] hover:bg-white"}`,
-                                    children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                                      import_react26.Icon,
+                                    children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                                      import_react28.Icon,
                                       {
                                         icon: social.icon,
                                         width: 20,
@@ -2020,20 +2097,20 @@ function LandingPageViewer({
                               })
                             }
                           ),
-                          settings.show_follower_count && (settings.follower_count || 0) > 0 && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          settings.show_follower_count && (settings.follower_count || 0) > 0 && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             import_framer_motion10.motion.div,
                             {
                               initial: { opacity: 0 },
                               animate: { opacity: 1 },
                               transition: { delay: 0.4, duration: 0.3 },
                               className: "text-center",
-                              children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                              children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                                 "p",
                                 {
                                   className: "text-sm",
                                   style: { color: themeColors.textSecondary },
                                   children: [
-                                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                       "span",
                                       {
                                         className: "font-semibold",
@@ -2051,7 +2128,7 @@ function LandingPageViewer({
                         ]
                       }
                     ),
-                    isSectionEnabled("voice_note") && settings.voice_note_url && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                    isSectionEnabled("voice_note") && settings.voice_note_url && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       import_framer_motion10.motion.div,
                       {
                         initial: { opacity: 0, y: 10 },
@@ -2061,7 +2138,7 @@ function LandingPageViewer({
                           "voice_note"
                         )}`,
                         style: { order: getSectionOrder("voice_note") },
-                        children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                        children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                           ModernAudioPlayer,
                           {
                             src: settings.voice_note_url,
@@ -2070,18 +2147,18 @@ function LandingPageViewer({
                         )
                       }
                     ),
-                    lightboxUrl && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                    lightboxUrl && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       "div",
                       {
                         className: "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80",
                         onClick: () => setLightboxUrl(null),
-                        children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                        children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                           "div",
                           {
                             className: "max-w-3xl max-h-[90vh] px-4",
                             onClick: (e) => e.stopPropagation(),
                             children: [
-                              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                 "img",
                                 {
                                   src: lightboxUrl,
@@ -2089,7 +2166,7 @@ function LandingPageViewer({
                                   className: "w-full h-full object-contain rounded-2xl"
                                 }
                               ),
-                              /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "mt-3 flex justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                              /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "mt-3 flex justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                 "button",
                                 {
                                   type: "button",
@@ -2103,7 +2180,7 @@ function LandingPageViewer({
                         )
                       }
                     ),
-                    isSectionEnabled("bio") && settings.bio && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                    isSectionEnabled("bio") && settings.bio && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       import_framer_motion10.motion.p,
                       {
                         initial: { opacity: 0 },
@@ -2119,12 +2196,12 @@ function LandingPageViewer({
                         children: settings.bio
                       }
                     ),
-                    isSectionEnabled("cta_block") && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                    isSectionEnabled("cta_block") && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       "div",
                       {
                         className: `w-full ${getSectionSpacingClass("cta_block")}`,
                         style: { order: getSectionOrder("cta_block") },
-                        children: settings.cta_cards && settings.cta_cards.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "w-full grid grid-cols-1 sm:grid-cols-2 gap-3", children: settings.cta_cards.sort((a, b) => a.order - b.order).map((card, index) => {
+                        children: settings.cta_cards && settings.cta_cards.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "w-full grid grid-cols-1 sm:grid-cols-2 gap-3", children: settings.cta_cards.sort((a, b) => a.order - b.order).map((card, index) => {
                           var _a2, _b2;
                           const size = card.style.size || "standard";
                           let sizeBodyClasses = "p-5 min-h-[120px]";
@@ -2231,7 +2308,7 @@ function LandingPageViewer({
                           const useNativeCardLink = !isPreview && !!card.url && !card.require_18plus;
                           const cardLinkProps = useNativeCardLink ? getNativeLinkProps(card.url, true) : null;
                           const ageConfirmLinkProps = shouldEscapeInAppBrowser && card.url ? getNativeLinkProps(card.url, true) : null;
-                          const renderCardBodyContent = () => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                          const renderCardBodyContent = () => /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                             "div",
                             {
                               className: `${sizeBodyClasses} ${imageBodyShapeClass} flex items-center justify-center relative overflow-hidden rounded-2xl`,
@@ -2240,8 +2317,8 @@ function LandingPageViewer({
                                 ...ctaRoundedClipStyle
                               },
                               children: [
-                                card.style.type === "image" && card.style.background_image && /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-                                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                card.style.type === "image" && card.style.background_image && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+                                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "img",
                                     {
                                       src: card.style.background_image,
@@ -2252,7 +2329,7 @@ function LandingPageViewer({
                                       decoding: "async"
                                     }
                                   ),
-                                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "div",
                                     {
                                       className: "absolute inset-0 bg-gradient-to-b from-black/30 to-black/60",
@@ -2273,7 +2350,7 @@ function LandingPageViewer({
                                       focusClass = "object-bottom";
                                     else focusClass = "object-center";
                                   }
-                                  return card.style.background_video_poster_url ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  return card.style.background_video_poster_url ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "img",
                                     {
                                       src: card.style.background_video_poster_url,
@@ -2285,7 +2362,7 @@ function LandingPageViewer({
                                     }
                                   ) : null;
                                 })(),
-                                (isOnlyFansTextIcon || isOnlyFansVipIconText || isOnlyFansContentText) && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                (isOnlyFansTextIcon || isOnlyFansVipIconText || isOnlyFansContentText) && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                   "img",
                                   {
                                     src: "/of-logo.svg",
@@ -2294,8 +2371,8 @@ function LandingPageViewer({
                                     loading: "lazy"
                                   }
                                 ),
-                                /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "text-center w-full relative z-10", children: [
-                                  isPremiumLogo && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "mb-2", children: isOnlyFansVipIconText ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "text-center w-full relative z-10", children: [
+                                  isPremiumLogo && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "mb-2", children: isOnlyFansVipIconText ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "img",
                                     {
                                       src: onlyFansVipAsset,
@@ -2303,8 +2380,8 @@ function LandingPageViewer({
                                       className: "h-auto max-h-8 w-auto max-w-[76%]",
                                       loading: "lazy"
                                     }
-                                  ) }) : isOnlyFansContentText ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center justify-center gap-1.5", children: [
-                                    card.style.prefix_text && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  ) }) : isOnlyFansContentText ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center justify-center gap-1.5", children: [
+                                    card.style.prefix_text && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                       "span",
                                       {
                                         className: "font-bold leading-none",
@@ -2316,7 +2393,7 @@ function LandingPageViewer({
                                         children: card.style.prefix_text
                                       }
                                     ),
-                                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                       "img",
                                       {
                                         src: onlyFansContentAsset,
@@ -2325,7 +2402,7 @@ function LandingPageViewer({
                                         loading: "lazy"
                                       }
                                     )
-                                  ] }) : isOnlyFansTextIcon ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  ] }) : isOnlyFansTextIcon ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex items-center justify-center", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "span",
                                     {
                                       className: "font-bold leading-none",
@@ -2336,8 +2413,8 @@ function LandingPageViewer({
                                       },
                                       children: card.style.prefix_text || card.title
                                     }
-                                  ) }) : /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex flex-col items-center gap-1", children: [
-                                    card.style.prefix_text && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  ) }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex flex-col items-center gap-1", children: [
+                                    card.style.prefix_text && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                       "p",
                                       {
                                         className: "text-base font-semibold",
@@ -2347,8 +2424,8 @@ function LandingPageViewer({
                                         children: card.style.prefix_text
                                       }
                                     ),
-                                    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center justify-center gap-2", children: [
-                                      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center justify-center gap-2", children: [
+                                      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                         "img",
                                         {
                                           src: "/of-logo.svg",
@@ -2357,7 +2434,7 @@ function LandingPageViewer({
                                           loading: "lazy"
                                         }
                                       ),
-                                      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                         "img",
                                         {
                                           src: "/of.webp",
@@ -2368,7 +2445,7 @@ function LandingPageViewer({
                                       )
                                     ] })
                                   ] }) }),
-                                  !isBrandedNonPremium && card.title && card.title.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  !isBrandedNonPremium && card.title && card.title.trim() !== "" && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "h3",
                                     {
                                       className: `${sizeTitleClass} font-semibold ${card.style.type === "image" || card.style.type === "gradient" || card.style.type === "solid" || card.style.type === "video" ? "text-white" : "text-foreground"}`,
@@ -2379,7 +2456,7 @@ function LandingPageViewer({
                                       children: card.title
                                     }
                                   ),
-                                  !isBrandedNonPremium && card.description && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  !isBrandedNonPremium && card.description && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "p",
                                     {
                                       className: `${sizeDescriptionClass} mt-1 ${card.style.type === "image" || card.style.type === "gradient" || card.style.type === "solid" || card.style.type === "video" ? "text-white/90" : "text-default-500"}`,
@@ -2389,7 +2466,7 @@ function LandingPageViewer({
                                       children: card.description
                                     }
                                   ),
-                                  isBrandedNonPremium && brandedNonPremiumText && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                  isBrandedNonPremium && brandedNonPremiumText && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                     "h3",
                                     {
                                       className: `${sizeTitleClass} font-semibold text-white`,
@@ -2401,15 +2478,15 @@ function LandingPageViewer({
                                     }
                                   )
                                 ] }),
-                                isBrandedNonPremium && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: card.style.logo_icon && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "absolute top-2 right-2 z-20", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                isBrandedNonPremium && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children: card.style.logo_icon && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "absolute top-2 right-2 z-20", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                   "div",
                                   {
                                     className: "rounded-full px-2 py-2 flex items-center justify-center shadow-md",
                                     style: {
                                       backgroundColor: isSnapchatLogo ? "#000000" : "#ffffff"
                                     },
-                                    children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                                      import_react26.Icon,
+                                    children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                                      import_react28.Icon,
                                       {
                                         icon: card.style.logo_icon,
                                         width: 18,
@@ -2423,8 +2500,8 @@ function LandingPageViewer({
                               ]
                             }
                           );
-                          const renderCardContent = () => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                            import_react23.Card,
+                          const renderCardContent = () => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                            import_react25.Card,
                             {
                               isPressable: true,
                               onPress: handleCardClick,
@@ -2433,10 +2510,10 @@ function LandingPageViewer({
                                 ...getCardStyle(),
                                 ...ctaRoundedClipStyle
                               },
-                              children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_react23.CardBody, { className: "overflow-hidden rounded-2xl p-0", children: renderCardBodyContent() })
+                              children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_react25.CardBody, { className: "overflow-hidden rounded-2xl p-0", children: renderCardBodyContent() })
                             }
                           );
-                          const baseCardContent = cardLinkProps ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          const baseCardContent = cardLinkProps ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             "a",
                             {
                               href: cardLinkProps.href,
@@ -2451,7 +2528,7 @@ function LandingPageViewer({
                               children: renderCardBodyContent()
                             }
                           ) : renderCardContent();
-                          const cardWithMechanisms = card.ctr_mechanisms ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          const cardWithMechanisms = card.ctr_mechanisms ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             CTACardWithMechanisms,
                             {
                               card,
@@ -2460,7 +2537,7 @@ function LandingPageViewer({
                               children: baseCardContent
                             }
                           ) : baseCardContent;
-                          const finalContent = showingAgeConfirmationFor === card.id ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          const finalContent = showingAgeConfirmationFor === card.id ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             AgeConfirmationModal,
                             {
                               isOpen: true,
@@ -2487,7 +2564,7 @@ function LandingPageViewer({
                           ) : cardWithMechanisms;
                           const urgencyBadge = card.style.countdown_badge;
                           const urgencyPosition = (urgencyBadge == null ? void 0 : urgencyBadge.position) || "below";
-                          const urgencyBadgeElement = (urgencyBadge == null ? void 0 : urgencyBadge.enabled) ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          const urgencyBadgeElement = (urgencyBadge == null ? void 0 : urgencyBadge.enabled) ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                             CTAUrgencyBadge,
                             {
                               label: urgencyBadge.label,
@@ -2496,7 +2573,7 @@ function LandingPageViewer({
                               className: urgencyPosition === "inside_bottom" ? "!mt-0" : ""
                             }
                           ) : null;
-                          return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                          return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                             import_framer_motion10.motion.div,
                             {
                               initial: { opacity: 0, y: 10 },
@@ -2507,42 +2584,42 @@ function LandingPageViewer({
                               },
                               className: `relative overflow-visible ${sizeColSpanClass}`,
                               children: [
-                                urgencyBadgeElement && urgencyPosition === "above" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "mb-2 flex w-full justify-center", children: urgencyBadgeElement }),
-                                /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+                                urgencyBadgeElement && urgencyPosition === "above" && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "mb-2 flex w-full justify-center", children: urgencyBadgeElement }),
+                                /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
                                   "div",
                                   {
                                     className: "relative z-10 rounded-2xl transition-transform hover:scale-[1.02]",
                                     style: ctaEffectStyle,
                                     children: [
-                                      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "relative z-10 rounded-2xl overflow-hidden", children: finalContent }),
-                                      urgencyBadgeElement && urgencyPosition === "inside_bottom" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "pointer-events-none absolute inset-x-0 bottom-2 z-20 flex justify-center px-3", children: urgencyBadgeElement })
+                                      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "relative z-10 rounded-2xl overflow-hidden", children: finalContent }),
+                                      urgencyBadgeElement && urgencyPosition === "inside_bottom" && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "pointer-events-none absolute inset-x-0 bottom-2 z-20 flex justify-center px-3", children: urgencyBadgeElement })
                                     ]
                                   }
                                 ),
-                                urgencyBadgeElement && urgencyPosition === "below" && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "flex w-full justify-center pb-4", children: urgencyBadgeElement })
+                                urgencyBadgeElement && urgencyPosition === "below" && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "flex w-full justify-center pb-4", children: urgencyBadgeElement })
                               ]
                             },
                             card.id
                           );
-                        }) }) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                        }) }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                           import_framer_motion10.motion.div,
                           {
                             initial: { opacity: 0, y: 10 },
                             animate: { opacity: 1, y: 0 },
                             transition: { delay: 0.6, duration: 0.3 },
                             className: "w-full px-4",
-                            children: !isPreview && link.destination_url ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                            children: !isPreview && link.destination_url ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                               "a",
                               {
                                 ...getNativeLinkProps(link.destination_url, true),
                                 className: "block w-full rounded-xl bg-content1 shadow-lg transition-transform hover:scale-[1.02]",
-                                children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center justify-between", children: [
-                                  /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex-1", children: [
-                                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h3", { className: "text-lg font-semibold text-foreground", children: link.title || "Click here" }),
-                                    link.description && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "text-sm text-default-500 mt-1", children: link.description })
+                                children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center justify-between", children: [
+                                  /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex-1", children: [
+                                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h3", { className: "text-lg font-semibold text-foreground", children: link.title || "Click here" }),
+                                    link.description && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "text-sm text-default-500 mt-1", children: link.description })
                                   ] }),
-                                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                                    import_react26.Icon,
+                                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                                    import_react28.Icon,
                                     {
                                       icon: "solar:arrow-right-line-duotone",
                                       width: 24,
@@ -2551,19 +2628,19 @@ function LandingPageViewer({
                                   )
                                 ] }) })
                               }
-                            ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                              import_react23.Card,
+                            ) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                              import_react25.Card,
                               {
                                 isPressable: true,
                                 onPress: handleButtonClick,
                                 className: "w-full hover:scale-[1.02] transition-transform shadow-lg",
-                                children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_react23.CardBody, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex items-center justify-between", children: [
-                                  /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: "flex-1", children: [
-                                    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("h3", { className: "text-lg font-semibold text-foreground", children: link.title || "Click here" }),
-                                    link.description && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("p", { className: "text-sm text-default-500 mt-1", children: link.description })
+                                children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_react25.CardBody, { className: "p-6", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex items-center justify-between", children: [
+                                  /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: "flex-1", children: [
+                                    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h3", { className: "text-lg font-semibold text-foreground", children: link.title || "Click here" }),
+                                    link.description && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { className: "text-sm text-default-500 mt-1", children: link.description })
                                   ] }),
-                                  /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-                                    import_react26.Icon,
+                                  /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+                                    import_react28.Icon,
                                     {
                                       icon: "solar:arrow-right-line-duotone",
                                       width: 24,
@@ -2577,7 +2654,7 @@ function LandingPageViewer({
                         )
                       }
                     ),
-                    isSectionEnabled("gallery") && hasGallery && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                    isSectionEnabled("gallery") && hasGallery && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                       import_framer_motion10.motion.div,
                       {
                         initial: { opacity: 0, y: 10 },
@@ -2613,14 +2690,14 @@ function LandingPageViewer({
                             }
                             galleryTouchStartX.current = null;
                           };
-                          return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                          return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                               "div",
                               {
                                 className: "relative w-full flex items-center justify-center",
                                 onTouchStart: handleTouchStart,
                                 onTouchEnd: handleTouchEnd,
-                                children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "relative w-full max-w-md h-64 sm:h-72 overflow-visible flex items-center justify-center", children: (() => {
+                                children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "relative w-full max-w-md h-64 sm:h-72 overflow-visible flex items-center justify-center", children: (() => {
                                   const cards = [];
                                   for (let offset = -2; offset <= 2; offset++) {
                                     const imgIndex = (index + offset + total) % total;
@@ -2633,7 +2710,7 @@ function LandingPageViewer({
                                     const blur = isActive ? "none" : "blur(3px)";
                                     const zIndex = 20 - absOffset;
                                     cards.push(
-                                      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                         "div",
                                         {
                                           className: "absolute rounded-3xl overflow-hidden shadow-2xl bg-default-100 cursor-pointer transition-all duration-300 ease-out",
@@ -2652,7 +2729,7 @@ function LandingPageViewer({
                                               setActiveGalleryIndex(imgIndex);
                                             }
                                           },
-                                          children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                                          children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                                             "img",
                                             {
                                               src: url,
@@ -2670,7 +2747,7 @@ function LandingPageViewer({
                                 })() })
                               }
                             ),
-                            total > 1 && /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: "mt-5 flex justify-center gap-1.5", children: galleryImages.map((url, dotIndex) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+                            total > 1 && /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: "mt-5 flex justify-center gap-1.5", children: galleryImages.map((url, dotIndex) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
                               "button",
                               {
                                 type: "button",
@@ -2696,59 +2773,59 @@ function LandingPageViewer({
 }
 
 // src/creator-page-flow.tsx
-var import_react27 = require("react");
+var import_react29 = require("react");
 
 // src/creator-privacy-policy.tsx
-var import_jsx_runtime11 = require("react/jsx-runtime");
+var import_jsx_runtime12 = require("react/jsx-runtime");
 function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("article", { className: "mx-auto max-w-3xl space-y-5 px-5 py-10 text-sm leading-7", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("h1", { className: "text-3xl font-semibold", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("article", { className: "mx-auto max-w-3xl space-y-5 px-5 py-10 text-sm leading-7", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("h1", { className: "text-3xl font-semibold", children: [
       "Privacy Policy \u2014 ",
       creatorName
     ] }),
-    domain && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+    domain && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("p", { children: [
       "Website: ",
       domain
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("p", { children: [
       "This policy explains how information is used when you visit ",
       creatorName,
       "'s creator page and follow its links."
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Information collected" }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "The website processes your IP address, browser and device information, referring page, approximate location derived from your IP address, page visits, link clicks, and campaign or external click identifiers included in the URL. These help operate the page, understand traffic and measure link performance." }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Cookies and browser storage" }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "text-xl font-semibold", children: "Information collected" }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { children: "The website processes your IP address, browser and device information, referring page, approximate location derived from your IP address, page visits, link clicks, and campaign or external click identifiers included in the URL. These help operate the page, understand traffic and measure link performance." }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "text-xl font-semibold", children: "Cookies and browser storage" }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("p", { children: [
       "First-party cookies and browser storage are used for visitor and session identifiers and consistent page variants",
       usesCloudflare ? ", plus a short-lived age-confirmation and security-verification record" : "",
       ". Browser settings let you clear or restrict this storage; doing so may affect functionality. Where age confirmation is shown, it asks you to declare that you are at least 18; it does not collect a date of birth or verify your identity."
     ] }),
-    usesCloudflare && /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Security verification" }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+    usesCloudflare && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "text-xl font-semibold", children: "Security verification" }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("p", { children: [
         "Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See ",
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("a", { className: "underline", href: "https://www.cloudflare.com/privacypolicy/", target: "_blank", rel: "noopener noreferrer", children: "Cloudflare's Privacy Policy" }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { className: "underline", href: "https://www.cloudflare.com/privacypolicy/", target: "_blank", rel: "noopener noreferrer", children: "Cloudflare's Privacy Policy" }),
         "."
       ] })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Hosting, analytics and destination services" }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "Technical service providers process information needed for hosting, media delivery, security and analytics. Where a link uses a tracking service, that service may receive campaign identifiers and connect a visit with later subscriptions or purchases on the destination service. Connected tracking integrations may report attributed events to configured advertising or analytics services. Processing can take place in other countries." }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "External social profiles and destination websites have their own privacy policies and terms. This policy covers this creator page, rather than those external services. Following an external link shares information needed to open and, where configured, attribute that visit." }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Purposes and retention" }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "Information is used to provide and secure the website, maintain the requested link journey, investigate errors and measure traffic and conversions. It is retained for these operational, reporting and legal purposes, subject to the relevant provider's settings and applicable law. This website does not ask you to enter payment details on the creator page." }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Your choices and privacy requests" }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("p", { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "text-xl font-semibold", children: "Hosting, analytics and destination services" }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { children: "Technical service providers process information needed for hosting, media delivery, security and analytics. Where a link uses a tracking service, that service may receive campaign identifiers and connect a visit with later subscriptions or purchases on the destination service. Connected tracking integrations may report attributed events to configured advertising or analytics services. Processing can take place in other countries." }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { children: "External social profiles and destination websites have their own privacy policies and terms. This policy covers this creator page, rather than those external services. Following an external link shares information needed to open and, where configured, attribute that visit." }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "text-xl font-semibold", children: "Purposes and retention" }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { children: "Information is used to provide and secure the website, maintain the requested link journey, investigate errors and measure traffic and conversions. It is retained for these operational, reporting and legal purposes, subject to the relevant provider's settings and applicable law. This website does not ask you to enter payment details on the creator page." }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "text-xl font-semibold", children: "Your choices and privacy requests" }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("p", { children: [
       "Where applicable law gives you rights to access, correct, delete or restrict use of your personal information, you can contact ",
       creatorName,
       " through a social profile linked from this page. Identify the website and your request; do not send passwords or payment details. Your browser settings and the destination service's privacy controls provide additional choices."
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("h2", { className: "text-xl font-semibold", children: "Changes to this policy" }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("p", { children: "This policy may be updated when the website's operation changes. The version published on this website applies to its current operation." })
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { className: "text-xl font-semibold", children: "Changes to this policy" }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { children: "This policy may be updated when the website's operation changes. The version published on this website applies to its current operation." })
   ] });
 }
 
 // src/creator-page-flow.tsx
-var import_jsx_runtime12 = require("react/jsx-runtime");
+var import_jsx_runtime13 = require("react/jsx-runtime");
 var turnstileScript;
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve();
@@ -2774,10 +2851,10 @@ function loadTurnstile() {
   return turnstileScript;
 }
 function TurnstileCheck({ siteKey, onToken, onError }) {
-  const container = (0, import_react27.useRef)(null);
-  const callbacks = (0, import_react27.useRef)({ onToken, onError });
+  const container = (0, import_react29.useRef)(null);
+  const callbacks = (0, import_react29.useRef)({ onToken, onError });
   callbacks.current = { onToken, onError };
-  (0, import_react27.useEffect)(() => {
+  (0, import_react29.useEffect)(() => {
     let disposed = false;
     let widget;
     loadTurnstile().then(() => {
@@ -2806,24 +2883,24 @@ function TurnstileCheck({ siteKey, onToken, onError }) {
       if (widget !== void 0) (_a = window.turnstile) == null ? void 0 : _a.remove(widget);
     };
   }, [siteKey]);
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref: container, className: "my-4 min-h-[65px] w-full" });
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { ref: container, className: "min-h-[65px] w-full", style: { margin: "14px 0 10px" } });
 }
 function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }) {
-  const [previewStage, setPreviewStage] = (0, import_react27.useState)(stage);
-  const [pending, setPending] = (0, import_react27.useState)(null);
-  const [privacy, setPrivacy] = (0, import_react27.useState)(false);
-  const [token, setToken] = (0, import_react27.useState)("");
-  const [error, setError] = (0, import_react27.useState)("");
-  const [busy, setBusy] = (0, import_react27.useState)(false);
-  const [attempt, setAttempt] = (0, import_react27.useState)(0);
-  const [previewComplete, setPreviewComplete] = (0, import_react27.useState)(false);
+  const [previewStage, setPreviewStage] = (0, import_react29.useState)(stage);
+  const [pending, setPending] = (0, import_react29.useState)(null);
+  const [privacy, setPrivacy] = (0, import_react29.useState)(false);
+  const [token, setToken] = (0, import_react29.useState)("");
+  const [error, setError] = (0, import_react29.useState)("");
+  const [busy, setBusy] = (0, import_react29.useState)(false);
+  const [attempt, setAttempt] = (0, import_react29.useState)(0);
+  const [previewComplete, setPreviewComplete] = (0, import_react29.useState)(false);
   const isTwoPage = twoPageEnabled && creatorUsesTwoPageFlow(link == null ? void 0 : link.link_type);
   const currentStage = isPreview ? previewStage : stage;
-  const modal = (0, import_react27.useRef)(null);
-  const titleId = (0, import_react27.useId)();
+  const modal = (0, import_react29.useRef)(null);
+  const titleId = (0, import_react29.useId)();
   const creatorName = ownerName || (link == null ? void 0 : link.creator_name) || creatorDisplayName(settings, link);
   const activeDialog = Boolean(isTwoPage && pending || privacy);
-  (0, import_react27.useEffect)(() => {
+  (0, import_react29.useEffect)(() => {
     var _a;
     if (!activeDialog) return;
     const previous = document.activeElement;
@@ -2892,29 +2969,29 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
       setBusy(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: "relative", "data-creator-stage": isTwoPage ? currentStage : "single", children: [
-    isPreview && isTwoPage && /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("nav", { "aria-label": "Creator flow preview", className: "flex justify-center gap-2 bg-black p-3 text-xs text-white", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", onClick: () => {
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: "relative", "data-creator-stage": isTwoPage ? currentStage : "single", children: [
+    isPreview && isTwoPage && /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("nav", { "aria-label": "Creator flow preview", className: "flex justify-center gap-2 bg-black p-3 text-xs text-white", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("button", { type: "button", onClick: () => {
         setPreviewStage("intro");
         setPending(null);
         setPreviewComplete(false);
       }, children: "First page" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { "aria-hidden": "true", children: "\u2192" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", onClick: () => {
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { "aria-hidden": "true", children: "\u2192" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("button", { type: "button", onClick: () => {
         setPreviewStage("join");
         setPending(null);
         setPreviewComplete(false);
       }, children: "Second page" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: renderPage(
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: renderPage(
       isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : settings != null ? settings : {},
       activate,
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("footer", { className: "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" && !(isTwoPage && currentStage === "join") ? "#71717a" : "rgba(255,255,255,0.6)" }, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("footer", { className: isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }, children: [
+        (!isTwoPage || currentStage === "intro") && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
           event.preventDefault();
           setPrivacy(true);
         } : void 0, children: "Privacy Policy" }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("p", { className: "mt-3", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("p", { className: "mt-3", children: [
           "\xA9 ",
           (/* @__PURE__ */ new Date()).getFullYear(),
           " ",
@@ -2922,27 +2999,27 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
         ] })
       ] })
     ) }),
-    isTwoPage && previewComplete && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
-    activeDialog && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", children: privacy ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { id: titleId, className: "sr-only", children: "Privacy Policy" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", className: "rounded-full border border-white/30 px-5 py-2", onClick: () => setPrivacy(false), children: "Close" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "text-left", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0, usesCloudflare: isTwoPage }) })
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("h2", { id: titleId, className: "text-2xl font-semibold", children: "Are you over 18?" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { className: "mt-3 text-sm leading-6 text-white/70", children: "This link is for adults only. Please confirm you are 18 or older to continue." }),
-      isPreview ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: "my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70", children: "Cloudflare verification appears here on the live page. Preview only." }) : turnstileSiteKey ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(TurnstileCheck, { siteKey: turnstileSiteKey, onToken: (value) => {
+    isTwoPage && previewComplete && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
+    activeDialog && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, style: !privacy ? { background: "rgba(0,0,0,.72)", backdropFilter: "blur(6px)" } : void 0, children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", style: !privacy ? { maxWidth: "320px", background: "#141414", borderColor: "#262626", padding: "22px 18px 18px" } : void 0, children: privacy ? /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { id: titleId, className: "sr-only", children: "Privacy Policy" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("button", { type: "button", className: "rounded-full border border-white/30 px-5 py-2", onClick: () => setPrivacy(false), children: "Close" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "text-left", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0, usesCloudflare: isTwoPage }) })
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_jsx_runtime13.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("h2", { id: titleId, className: "font-semibold", style: { fontSize: "19px", lineHeight: "normal", margin: "0 0 6px" }, children: "Are you over 18?" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { className: "text-white/70", style: { fontSize: "13px", lineHeight: "normal", margin: 0 }, children: "This link contains content for adults only. Please confirm you are 18 or older to continue." }),
+      isPreview ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: "my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70", children: "Cloudflare verification appears here on the live page. Preview only." }) : turnstileSiteKey ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(TurnstileCheck, { siteKey: turnstileSiteKey, onToken: (value) => {
         setToken(value);
         if (value) setError("");
-      }, onError: setError }, attempt) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "alert", className: "my-4 text-sm", children: "Verification is temporarily unavailable. Please try again later." }),
-      error && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("p", { role: "alert", className: "my-3 text-sm text-red-300", children: error }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", className: "mt-4 w-full rounded-full bg-white px-5 py-3 font-semibold text-black disabled:opacity-40", disabled: busy || !isPreview && !token, onClick: confirm, children: busy ? "Verifying\u2026" : "Yes, I'm over 18" }),
-      !isPreview && error && /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", className: "mt-3 text-sm underline", onClick: () => {
+      }, onError: setError }, attempt) : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { role: "alert", className: "my-4 text-sm", children: "Verification is temporarily unavailable. Please try again later." }),
+      error && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("p", { role: "alert", className: "my-3 text-sm text-red-300", children: error }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("button", { type: "button", className: "mt-2 w-full rounded-full bg-white px-5 py-3 text-[15px] font-semibold text-black disabled:opacity-40", disabled: busy || !isPreview && !token, onClick: confirm, children: busy ? "Verifying\u2026" : "Yes, I'm over 18" }),
+      !isPreview && error && /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("button", { type: "button", className: "mt-3 text-sm underline", onClick: () => {
         setError("");
         setToken("");
         setAttempt((value) => value + 1);
       }, children: "Retry verification" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("button", { type: "button", disabled: busy, className: "mt-3 w-full rounded-full border border-white/20 px-5 py-3 text-white/70", onClick: () => setPending(null), children: "No, take me back" }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { href: privacyHref, className: "mt-4 inline-block text-xs underline text-white/60", onClick: isPreview ? (event) => {
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("button", { type: "button", disabled: busy, className: "mt-2 w-full rounded-full border border-white/20 px-5 py-3 text-[15px] font-semibold text-white/70", onClick: () => setPending(null), children: "No, take me back" }),
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("a", { href: privacyHref, className: "mt-4 inline-block text-xs underline text-white/60", onClick: isPreview ? (event) => {
         event.preventDefault();
         setPending(null);
         setPrivacy(true);
@@ -2954,6 +3031,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
 0 && (module.exports = {
   AgeConfirmationModal,
   CTACardWithMechanisms,
+  CreatorJourneyLayout,
   CreatorPageFlow,
   CreatorPrivacyPolicy,
   LandingPageViewer,

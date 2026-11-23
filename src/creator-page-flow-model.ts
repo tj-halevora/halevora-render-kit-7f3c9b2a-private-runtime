@@ -26,31 +26,25 @@ export function creatorJourneySettings(settings: any, link: any, stage: CreatorP
   const source = settings ?? {};
   const cards = Array.isArray(source.cta_cards) ? source.cta_cards : [];
   const fallback = { id: "default", title: "Chat with me", url: link?.destination_url || "", order: 0, style: { type: "solid", background_color: "#ffffff", text_color: "#08080a" } };
-  const introCard = { ...fallback, id: cards[0]?.id || "default", title: "More of me →", url: joinHref };
+  const introCard = { ...fallback, id: cards[0]?.id || "default", title: "more of me", url: joinHref };
   return {
     background_color: "#08080a", background_gradient: { start: "#08080a", end: "#08080a" },
     theme_mode: "dark", button_style: "solid", button_color: "#ffffff", profile_display_mode: "full",
     social_links: [], verified_badge: false, verified_badge_style: "solid", show_follower_count: false,
     show_domain_handle: false, ...source,
     display_name: creatorDisplayName(source, link),
+    __creator_journey_stage: stage,
     // The visitor explicitly chooses each step; a stored timer cannot skip the age gate.
     auto_redirect_enabled: false,
     layout_sections: Array.from(new Set([...(source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"]), "cta_block"])),
     cta_cards: stage === "intro" ? [introCard] : (cards.length ? cards : [fallback]).map((card: any) => ({ ...card, require_18plus: false })),
-    ...(stage === "intro" ? { gallery_images: [], voice_note_url: null } : {
-      // Presentation only: retain every saved CTA identity and tracked route.
-      // Both renderers use this internal flag to omit hero/avatar placeholders.
-      __creator_join_text_only: true,
-      avatar_url: null, header_video_url: null, header_video_poster_url: null,
-      gallery_images: [], voice_note_url: null, social_links: [],
-      theme_mode: "dark", background_color: "#08080a",
-      background_gradient: { start: "#08080a", end: "#08080a" },
-      layout_sections: ["bio", "cta_block"], section_spacing: {},
-      bio: "More of my content. Tap below to chat with me.",
+    gallery_images: [], voice_note_url: null,
+    ...(stage === "join" ? {
+      // Only the presentation changes; every saved tracked capability survives.
       cta_cards: (cards.length ? cards : [fallback]).map((card: any) => ({
         ...card, title: "chat with me", description: null,
         style: { ...fallback.style }, ctr_mechanisms: null, require_18plus: false,
       })),
-    }),
+    } : {}),
   };
 }

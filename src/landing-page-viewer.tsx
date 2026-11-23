@@ -1,6 +1,7 @@
 "use client";
 
 import { appendCreatorJourneySearch } from "./creator-page-flow-model";
+import { CreatorJourneyLayout } from "./creator-journey-layout";
 import React, { useState, useEffect, useRef } from "react";
 
 import { Avatar } from "@heroui/react";
@@ -250,7 +251,6 @@ export function LandingPageViewer({
   const heroPoster =
     settings.header_video_poster_url || settings.avatar_url || undefined;
   const mode =
-    (settings as any).__creator_join_text_only === true ? "text" :
     settings.profile_display_mode === "avatar" &&
     (settings.section_spacing as any)?.__profile_video_background
       ? "video_background"
@@ -878,6 +878,19 @@ useEffect(() => {
     (isFullMode || isVideoMode) && settings.header_image_height
       ? { height: `${settings.header_image_height}px` }
       : undefined;
+
+  if (["intro", "join"].includes((settings as any).__creator_journey_stage)) {
+    return <div ref={viewerRootRef} data-halevora-protected={protectPublicContent ? "true" : undefined}
+      onContextMenuCapture={preventContentSave} onDragStartCapture={preventContentSave} onDropCapture={preventContentSave} style={contentProtectionStyle}>
+      <CreatorJourneyLayout settings={settings} pageFooter={pageFooter}
+      renderAction={(card, className) => isPreview
+        ? <button type="button" className={className} onClick={() => onCtaActivate?.(card.url, () => {})}>{card.title}</button>
+        : <a {...getNativeLinkProps(card.url, true)} className={className}>{card.title}</a>}
+      renderSocial={(social, className, icon) => isPreview
+        ? <a href={social.url} className={className} aria-label={social.platform || "Social profile"} onClick={(event) => event.preventDefault()}>{icon}</a>
+        : <a {...getNativeLinkProps(social.url)} className={className} aria-label={social.platform || "Social profile"}>{icon}</a>} />
+    </div>;
+  }
 
   return (
     <div
