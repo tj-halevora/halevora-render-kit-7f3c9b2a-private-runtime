@@ -85,7 +85,31 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
     auto_redirect_enabled: false,
     layout_sections: Array.from(/* @__PURE__ */ new Set([...source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"], "cta_block"])),
     cta_cards: stage === "intro" ? [introCard] : (cards.length ? cards : [fallback]).map((card) => ({ ...card, require_18plus: false })),
-    ...stage === "intro" ? { gallery_images: [], voice_note_url: null } : {}
+    ...stage === "intro" ? { gallery_images: [], voice_note_url: null } : {
+      // Presentation only: retain every saved CTA identity and tracked route.
+      // Both renderers use this internal flag to omit hero/avatar placeholders.
+      __creator_join_text_only: true,
+      avatar_url: null,
+      header_video_url: null,
+      header_video_poster_url: null,
+      gallery_images: [],
+      voice_note_url: null,
+      social_links: [],
+      theme_mode: "dark",
+      background_color: "#08080a",
+      background_gradient: { start: "#08080a", end: "#08080a" },
+      layout_sections: ["bio", "cta_block"],
+      section_spacing: {},
+      bio: "More of my content. Tap below to chat with me.",
+      cta_cards: (cards.length ? cards : [fallback]).map((card) => ({
+        ...card,
+        title: "chat with me",
+        description: null,
+        style: { ...fallback.style },
+        ctr_mechanisms: null,
+        require_18plus: false
+      }))
+    }
   };
 }
 
@@ -1047,7 +1071,7 @@ function LandingPageViewer({
   const heroVideoRef = (0, import_react21.useRef)(null);
   const avatarVideoRef = (0, import_react21.useRef)(null);
   const heroPoster = settings.header_video_poster_url || settings.avatar_url || void 0;
-  const mode = settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background) ? "video_background" : settings.profile_display_mode || "full";
+  const mode = settings.__creator_join_text_only === true ? "text" : settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background) ? "video_background" : settings.profile_display_mode || "full";
   const isFullMode = mode === "full";
   const isVideoMode = mode === "video";
   const isVideoBackgroundMode = mode === "video_background";
@@ -2885,7 +2909,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
     /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: renderPage(
       isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : settings != null ? settings : {},
       activate,
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("footer", { className: "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" ? "#71717a" : "rgba(255,255,255,0.6)" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("footer", { className: "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" && !(isTwoPage && currentStage === "join") ? "#71717a" : "rgba(255,255,255,0.6)" }, children: [
         /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
           event.preventDefault();
           setPrivacy(true);

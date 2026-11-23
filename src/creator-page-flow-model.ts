@@ -37,6 +37,20 @@ export function creatorJourneySettings(settings: any, link: any, stage: CreatorP
     auto_redirect_enabled: false,
     layout_sections: Array.from(new Set([...(source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"]), "cta_block"])),
     cta_cards: stage === "intro" ? [introCard] : (cards.length ? cards : [fallback]).map((card: any) => ({ ...card, require_18plus: false })),
-    ...(stage === "intro" ? { gallery_images: [], voice_note_url: null } : {}),
+    ...(stage === "intro" ? { gallery_images: [], voice_note_url: null } : {
+      // Presentation only: retain every saved CTA identity and tracked route.
+      // Both renderers use this internal flag to omit hero/avatar placeholders.
+      __creator_join_text_only: true,
+      avatar_url: null, header_video_url: null, header_video_poster_url: null,
+      gallery_images: [], voice_note_url: null, social_links: [],
+      theme_mode: "dark", background_color: "#08080a",
+      background_gradient: { start: "#08080a", end: "#08080a" },
+      layout_sections: ["bio", "cta_block"], section_spacing: {},
+      bio: "More of my content. Tap below to chat with me.",
+      cta_cards: (cards.length ? cards : [fallback]).map((card: any) => ({
+        ...card, title: "chat with me", description: null,
+        style: { ...fallback.style }, ctr_mechanisms: null, require_18plus: false,
+      })),
+    }),
   };
 }
