@@ -250,6 +250,7 @@ export function LandingPageViewer({
   const heroPoster =
     settings.header_video_poster_url || settings.avatar_url || undefined;
   const mode =
+    (settings as any).__creator_join_text_only === true ? "text" :
     settings.profile_display_mode === "avatar" &&
     (settings.section_spacing as any)?.__profile_video_background
       ? "video_background"
