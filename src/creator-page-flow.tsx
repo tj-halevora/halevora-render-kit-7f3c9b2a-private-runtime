@@ -35,7 +35,7 @@ function TurnstileCheck({ siteKey, onToken, onError }: { siteKey: string; onToke
     }).catch((error: Error) => { if (!disposed) callbacks.current.onError(error.message); });
     return () => { disposed = true; if (widget !== undefined) window.turnstile?.remove(widget); };
   }, [siteKey]);
-  return <div ref={container} className="min-h-[65px] w-full" style={{ margin: "14px 0 10px" }} />;
+  return <div ref={container} className="min-h-[65px] w-full" style={{ margin: "14px 0 10px", display: "flex", alignItems: "center", justifyContent: "center" }} />;
 }
 
 export type CreatorPageFlowProps = {
