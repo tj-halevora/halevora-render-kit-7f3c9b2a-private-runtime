@@ -177,7 +177,7 @@ interface AgeConfirmationModalProps {
 }
 declare function AgeConfirmationModal({ isOpen, onConfirm, onCancel, confirmHref, confirmTargetBlank, children, }: AgeConfirmationModalProps): react_jsx_runtime.JSX.Element;
 
-/** The two-page journey is an explicit V3 feature; legacy settings stay intact. */
+/** Whitehat V1 shares the V3 journey; V2 keeps its original single-page behavior. */
 declare function creatorUsesTwoPageFlow(linkType: unknown): boolean;
 type CreatorPageStage = "intro" | "join";
 declare function creatorDisplayName(settings: any, link: any): string;
@@ -203,12 +203,13 @@ type CreatorPageFlowProps = {
     joinHref: string;
     privacyHref: string;
     turnstileSiteKey?: string;
+    twoPageEnabled?: boolean;
     verify?: (token: string, target: string) => Promise<void>;
     renderPage: (settings: any, activate: (url: string, proceed: (options?: {
         track?: boolean;
     }) => void) => boolean, footer: React.ReactNode) => React.ReactNode;
 };
-declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage, isPreview, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }: CreatorPageFlowProps): react_jsx_runtime.JSX.Element;
+declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage, isPreview, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled, verify, renderPage }: CreatorPageFlowProps): react_jsx_runtime.JSX.Element;
 
 /** Deliberately describes implemented behavior; no invented legal entity or retention promise. */
 declare function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare }: {

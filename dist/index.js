@@ -45,7 +45,7 @@ module.exports = __toCommonJS(index_exports);
 
 // src/creator-page-flow-model.ts
 function creatorUsesTwoPageFlow(linkType) {
-  return linkType === "whitehat_v3";
+  return linkType === "whitehat" || linkType === "whitehat_v3";
 }
 function creatorDisplayName(settings, link) {
   for (const value of [settings == null ? void 0 : settings.display_name, link == null ? void 0 : link.creator_name, link == null ? void 0 : link.title, link == null ? void 0 : link.domain]) {
@@ -2784,7 +2784,7 @@ function TurnstileCheck({ siteKey, onToken, onError }) {
   }, [siteKey]);
   return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { ref: container, className: "my-4 min-h-[65px] w-full" });
 }
-function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }) {
+function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }) {
   const [previewStage, setPreviewStage] = (0, import_react27.useState)(stage);
   const [pending, setPending] = (0, import_react27.useState)(null);
   const [privacy, setPrivacy] = (0, import_react27.useState)(false);
@@ -2793,7 +2793,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
   const [busy, setBusy] = (0, import_react27.useState)(false);
   const [attempt, setAttempt] = (0, import_react27.useState)(0);
   const [previewComplete, setPreviewComplete] = (0, import_react27.useState)(false);
-  const isTwoPage = creatorUsesTwoPageFlow(link == null ? void 0 : link.link_type);
+  const isTwoPage = twoPageEnabled && creatorUsesTwoPageFlow(link == null ? void 0 : link.link_type);
   const currentStage = isPreview ? previewStage : stage;
   const modal = (0, import_react27.useRef)(null);
   const titleId = (0, import_react27.useId)();

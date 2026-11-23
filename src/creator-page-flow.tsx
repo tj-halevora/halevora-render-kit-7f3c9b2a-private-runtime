@@ -40,12 +40,12 @@ function TurnstileCheck({ siteKey, onToken, onError }: { siteKey: string; onToke
 
 export type CreatorPageFlowProps = {
   link: any; settings: any; creatorName?: string; stage?: CreatorPageStage; isPreview?: boolean;
-  joinHref: string; privacyHref: string; turnstileSiteKey?: string;
+  joinHref: string; privacyHref: string; turnstileSiteKey?: string; twoPageEnabled?: boolean;
   verify?: (token: string, target: string) => Promise<void>;
   renderPage: (settings: any, activate: (url: string, proceed: (options?: { track?: boolean }) => void) => boolean, footer: React.ReactNode) => React.ReactNode;
 };
 
-export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }: CreatorPageFlowProps) {
+export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }: CreatorPageFlowProps) {
   const [previewStage, setPreviewStage] = useState<CreatorPageStage>(stage);
   const [pending, setPending] = useState<{ target: string; proceed: (options?: { track?: boolean }) => void } | null>(null);
   const [privacy, setPrivacy] = useState(false);
@@ -54,7 +54,7 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [previewComplete, setPreviewComplete] = useState(false);
-  const isTwoPage = creatorUsesTwoPageFlow(link?.link_type);
+  const isTwoPage = twoPageEnabled && creatorUsesTwoPageFlow(link?.link_type);
   const currentStage = isPreview ? previewStage : stage;
   const modal = useRef<HTMLDivElement>(null);
   const titleId = useId();
