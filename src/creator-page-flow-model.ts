@@ -1,6 +1,6 @@
-/** The two-page journey is an explicit V3 feature; legacy settings stay intact. */
+/** Whitehat V1 shares the V3 journey; V2 keeps its original single-page behavior. */
 export function creatorUsesTwoPageFlow(linkType: unknown): boolean {
-  return linkType === "whitehat_v3";
+  return linkType === "whitehat" || linkType === "whitehat_v3";
 }
 
 export type CreatorPageStage = "intro" | "join";

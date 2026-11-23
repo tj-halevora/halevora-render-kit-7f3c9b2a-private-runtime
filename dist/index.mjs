@@ -1,6 +1,6 @@
 // src/creator-page-flow-model.ts
 function creatorUsesTwoPageFlow(linkType) {
-  return linkType === "whitehat_v3";
+  return linkType === "whitehat" || linkType === "whitehat_v3";
 }
 function creatorDisplayName(settings, link) {
   for (const value of [settings == null ? void 0 : settings.display_name, link == null ? void 0 : link.creator_name, link == null ? void 0 : link.title, link == null ? void 0 : link.domain]) {
@@ -2739,7 +2739,7 @@ function TurnstileCheck({ siteKey, onToken, onError }) {
   }, [siteKey]);
   return /* @__PURE__ */ jsx12("div", { ref: container, className: "my-4 min-h-[65px] w-full" });
 }
-function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }) {
+function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }) {
   const [previewStage, setPreviewStage] = useState9(stage);
   const [pending, setPending] = useState9(null);
   const [privacy, setPrivacy] = useState9(false);
@@ -2748,7 +2748,7 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
   const [busy, setBusy] = useState9(false);
   const [attempt, setAttempt] = useState9(0);
   const [previewComplete, setPreviewComplete] = useState9(false);
-  const isTwoPage = creatorUsesTwoPageFlow(link == null ? void 0 : link.link_type);
+  const isTwoPage = twoPageEnabled && creatorUsesTwoPageFlow(link == null ? void 0 : link.link_type);
   const currentStage = isPreview ? previewStage : stage;
   const modal = useRef3(null);
   const titleId = useId();
