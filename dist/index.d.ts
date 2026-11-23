@@ -177,7 +177,7 @@ interface AgeConfirmationModalProps {
 }
 declare function AgeConfirmationModal({ isOpen, onConfirm, onCancel, confirmHref, confirmTargetBlank, children, }: AgeConfirmationModalProps): react_jsx_runtime.JSX.Element;
 
-/** Whitehat V1 shares the V3 journey; V2 keeps its original single-page behavior. */
+/** Every Whitehat variant shares the same verified two-page creator journey. */
 declare function creatorUsesTwoPageFlow(linkType: unknown): boolean;
 type CreatorPageStage = "intro" | "join";
 declare function creatorDisplayName(settings: any, link: any): string;

@@ -1,6 +1,6 @@
-/** Whitehat V1 shares the V3 journey; V2 keeps its original single-page behavior. */
+/** Every Whitehat variant shares the same verified two-page creator journey. */
 export function creatorUsesTwoPageFlow(linkType: unknown): boolean {
-  return linkType === "whitehat" || linkType === "whitehat_v3";
+  return linkType === "whitehat" || linkType === "whitehat_v2" || linkType === "whitehat_v3";
 }
 
 export type CreatorPageStage = "intro" | "join";

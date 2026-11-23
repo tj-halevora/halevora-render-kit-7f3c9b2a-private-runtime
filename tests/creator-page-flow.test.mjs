@@ -29,8 +29,9 @@ test('campaign values survive both stages, including repeats and saved parameter
   assert.equal(final.searchParams.get('x'), '1');
 });
 
-test('Whitehat V1 and V3 share two-page presentation while V2 stays single-page', () => {
+test('all Whitehat variants share two-page presentation', () => {
   assert.equal(creatorUsesTwoPageFlow('whitehat_v3'), true);
   assert.equal(creatorUsesTwoPageFlow('whitehat'), true);
-  for (const type of ['whitehat_v2','greyhat','greyhat_v2','greyhat_v3','blackhat','',null,undefined]) assert.equal(creatorUsesTwoPageFlow(type), false);
+  assert.equal(creatorUsesTwoPageFlow('whitehat_v2'), true);
+  for (const type of ['greyhat','greyhat_v2','greyhat_v3','blackhat','',null,undefined]) assert.equal(creatorUsesTwoPageFlow(type), false);
 });

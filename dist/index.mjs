@@ -1,6 +1,6 @@
 // src/creator-page-flow-model.ts
 function creatorUsesTwoPageFlow(linkType) {
-  return linkType === "whitehat" || linkType === "whitehat_v3";
+  return linkType === "whitehat" || linkType === "whitehat_v2" || linkType === "whitehat_v3";
 }
 function creatorDisplayName(settings, link) {
   for (const value of [settings == null ? void 0 : settings.display_name, link == null ? void 0 : link.creator_name, link == null ? void 0 : link.title, link == null ? void 0 : link.domain]) {
