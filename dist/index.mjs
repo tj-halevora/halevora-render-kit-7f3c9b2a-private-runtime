@@ -79,20 +79,20 @@ function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial
   }
   return /* @__PURE__ */ jsxs("div", { className: "hvj-page", "data-creator-layout": "reference", children: [
     /* @__PURE__ */ jsx("style", { children: `
-      .hvj-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:16px 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:#0b0b0b;color:#f2f2f2}
+      .hvj-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:16px 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;line-height:1.5;background:#0b0b0b;color:#f2f2f2}
       .hvj-photo{position:relative;width:100%;max-width:360px;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:#161616}
       .hvj-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
       .hvj-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.78) 100%)}
       .hvj-identity{position:absolute;left:0;right:0;bottom:0;padding:0 18px 20px;text-align:center}
-      .hvj-name{font-size:24px;font-weight:700;margin:0;display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em;line-height:normal;color:#f2f2f2}
-      .hvj-handle{font-size:13px;color:rgba(255,255,255,.72);margin:4px 0 0;line-height:normal}
-      .hvj-tag{font-size:13px;color:rgba(255,255,255,.8);margin:8px 0 0;line-height:normal}
-      .hvj-button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:12px 22px;border-radius:999px;background:#fff;color:#0b0b0b;font-weight:600;font-size:15px;line-height:normal;text-decoration:none;border:0;cursor:pointer;width:100%;max-width:360px}
+      .hvj-name{font-size:24px;font-weight:700;margin:0;display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em;line-height:1.5;color:#f2f2f2}
+      .hvj-handle{font-size:13px;color:rgba(255,255,255,.72);margin:4px 0 0;line-height:1.5}
+      .hvj-tag{font-size:13px;color:rgba(255,255,255,.8);margin:8px 0 0;line-height:1.5}
+      .hvj-button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:12px 22px;border-radius:999px;background:#fff;color:#0b0b0b;font-weight:600;font-size:15px;line-height:1.5;text-decoration:none;border:0;cursor:pointer;width:100%;max-width:360px}
       .hvj-button:focus-visible,.hvj-social:focus-visible{outline:2px solid #fff;outline-offset:4px}
       .hvj-socials{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:18px}
       .hvj-social{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:999px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;text-decoration:none}
-      .hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:normal;color:rgba(255,255,255,.72);margin:14px 0 0}
-      .hvj-footer{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;line-height:normal;color:rgba(255,255,255,.6);text-align:center}
+      .hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:1.5;color:rgba(255,255,255,.72);margin:14px 0 0}
+      .hvj-footer{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.6);text-align:center}
       .hvj-footer a{color:rgba(255,255,255,.75);text-decoration:none}.hvj-footer p{margin:0}
     ` }),
     /* @__PURE__ */ jsxs("div", { className: "hvj-photo", children: [
@@ -2959,8 +2959,8 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
       /* @__PURE__ */ jsx13("button", { type: "button", className: "rounded-full border border-white/30 px-5 py-2", onClick: () => setPrivacy(false), children: "Close" }),
       /* @__PURE__ */ jsx13("div", { className: "text-left", children: /* @__PURE__ */ jsx13(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0, usesCloudflare: isTwoPage }) })
     ] }) : /* @__PURE__ */ jsxs11(Fragment9, { children: [
-      /* @__PURE__ */ jsx13("h2", { id: titleId, className: "font-semibold", style: { fontSize: "19px", lineHeight: "normal", margin: "0 0 6px" }, children: "Are you over 18?" }),
-      /* @__PURE__ */ jsx13("p", { className: "text-white/70", style: { fontSize: "13px", lineHeight: "normal", margin: 0 }, children: "This link contains content for adults only. Please confirm you are 18 or older to continue." }),
+      /* @__PURE__ */ jsx13("h2", { id: titleId, className: "font-semibold", style: { fontSize: "19px", lineHeight: "1.5", margin: "0 0 6px" }, children: "Are you over 18?" }),
+      /* @__PURE__ */ jsx13("p", { className: "text-white/70", style: { fontSize: "13px", lineHeight: "1.5", margin: 0 }, children: "This link contains content for adults only. Please confirm you are 18 or older to continue." }),
       isPreview ? /* @__PURE__ */ jsx13("div", { className: "my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70", children: "Cloudflare verification appears here on the live page. Preview only." }) : turnstileSiteKey ? /* @__PURE__ */ jsx13(TurnstileCheck, { siteKey: turnstileSiteKey, onToken: (value) => {
         setToken(value);
         if (value) setError("");

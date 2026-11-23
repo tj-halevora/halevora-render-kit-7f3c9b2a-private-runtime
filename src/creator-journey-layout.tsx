@@ -31,20 +31,20 @@ export function CreatorJourneyLayout({ settings, pageFooter, renderAction, rende
   } catch {}
   return <div className="hvj-page" data-creator-layout="reference">
     <style>{`
-      .hvj-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:16px 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;background:#0b0b0b;color:#f2f2f2}
+      .hvj-page{min-height:100svh;display:flex;flex-direction:column;align-items:center;padding:16px 16px calc(32px + env(safe-area-inset-bottom));box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;line-height:1.5;background:#0b0b0b;color:#f2f2f2}
       .hvj-photo{position:relative;width:100%;max-width:360px;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:#161616}
       .hvj-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
       .hvj-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 45%,rgba(0,0,0,.78) 100%)}
       .hvj-identity{position:absolute;left:0;right:0;bottom:0;padding:0 18px 20px;text-align:center}
-      .hvj-name{font-size:24px;font-weight:700;margin:0;display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em;line-height:normal;color:#f2f2f2}
-      .hvj-handle{font-size:13px;color:rgba(255,255,255,.72);margin:4px 0 0;line-height:normal}
-      .hvj-tag{font-size:13px;color:rgba(255,255,255,.8);margin:8px 0 0;line-height:normal}
-      .hvj-button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:12px 22px;border-radius:999px;background:#fff;color:#0b0b0b;font-weight:600;font-size:15px;line-height:normal;text-decoration:none;border:0;cursor:pointer;width:100%;max-width:360px}
+      .hvj-name{font-size:24px;font-weight:700;margin:0;display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em;line-height:1.5;color:#f2f2f2}
+      .hvj-handle{font-size:13px;color:rgba(255,255,255,.72);margin:4px 0 0;line-height:1.5}
+      .hvj-tag{font-size:13px;color:rgba(255,255,255,.8);margin:8px 0 0;line-height:1.5}
+      .hvj-button{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:12px 22px;border-radius:999px;background:#fff;color:#0b0b0b;font-weight:600;font-size:15px;line-height:1.5;text-decoration:none;border:0;cursor:pointer;width:100%;max-width:360px}
       .hvj-button:focus-visible,.hvj-social:focus-visible{outline:2px solid #fff;outline-offset:4px}
       .hvj-socials{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:18px}
       .hvj-social{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:999px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;text-decoration:none}
-      .hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:normal;color:rgba(255,255,255,.72);margin:14px 0 0}
-      .hvj-footer{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;line-height:normal;color:rgba(255,255,255,.6);text-align:center}
+      .hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:1.5;color:rgba(255,255,255,.72);margin:14px 0 0}
+      .hvj-footer{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.6);text-align:center}
       .hvj-footer a{color:rgba(255,255,255,.75);text-decoration:none}.hvj-footer p{margin:0}
     `}</style>
     <div className="hvj-photo">
