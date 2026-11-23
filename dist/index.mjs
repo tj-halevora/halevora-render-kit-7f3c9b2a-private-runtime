@@ -2837,7 +2837,7 @@ function TurnstileCheck({ siteKey, onToken, onError }) {
       if (widget !== void 0) (_a = window.turnstile) == null ? void 0 : _a.remove(widget);
     };
   }, [siteKey]);
-  return /* @__PURE__ */ jsx13("div", { ref: container, className: "min-h-[65px] w-full", style: { margin: "14px 0 10px" } });
+  return /* @__PURE__ */ jsx13("div", { ref: container, className: "min-h-[65px] w-full", style: { margin: "14px 0 10px", display: "flex", alignItems: "center", justifyContent: "center" } });
 }
 function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }) {
   const [previewStage, setPreviewStage] = useState9(stage);
