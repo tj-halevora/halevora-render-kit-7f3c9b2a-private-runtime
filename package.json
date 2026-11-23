@@ -1,6 +1,6 @@
 {
   "name": "halevora-render-kit-7f3c9b2a-private-runtime",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

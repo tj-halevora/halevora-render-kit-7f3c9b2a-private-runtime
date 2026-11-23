@@ -57,3 +57,12 @@ test('all Whitehat variants share two-page presentation', () => {
   assert.equal(creatorUsesTwoPageFlow('whitehat_v2'), true);
   for (const type of ['greyhat','greyhat_v2','greyhat_v3','blackhat','',null,undefined]) assert.equal(creatorUsesTwoPageFlow(type), false);
 });
+
+test('editable journey copy changes presentation only and retains exact capability URLs and IDs',()=>{
+ const source={section_spacing:{__creator_intro_button_text:' Meet me ',__creator_join_button_text:'Say hello',__creator_join_description:'A custom sentence'},cta_cards:[{id:'paid',url:'/go/private/paid?ecid=saved&utm_content=a&utm_content=b',order:3}]};const before=JSON.stringify(source);
+ const intro=creatorJourneySettings(source,{},'intro','/join/private?ecid=source');const join=creatorJourneySettings(source,{},'join','/join/private');assert.equal(intro.cta_cards[0].title,'Meet me');assert.equal(intro.cta_cards[0].url,'/join/private?ecid=source');assert.equal(join.cta_cards[0].title,'Say hello');assert.equal(join.__creator_join_description,'A custom sentence');assert.equal(join.cta_cards[0].url,source.cta_cards[0].url);assert.equal(join.cta_cards[0].id,'paid');assert.equal(JSON.stringify(source),before);
+});
+test('empty custom labels retain defaults, description can be hidden, and text is bounded',()=>{
+ const s={section_spacing:{__creator_intro_button_text:'  ',__creator_join_button_text:'x'.repeat(120),__creator_join_description:''}};
+ assert.equal(creatorJourneySettings(s,{},'intro','/join/v').cta_cards[0].title,'more of me');const join=creatorJourneySettings(s,{},'join','/join/v');assert.equal(join.cta_cards[0].title.length,80);assert.equal(join.__creator_join_description,'');assert.equal(creatorJourneySettings({section_spacing:{__creator_join_button_text:null}}, {},'join','/join/v').cta_cards[0].title,'chat with me');
+});

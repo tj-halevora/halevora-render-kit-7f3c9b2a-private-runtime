@@ -109,7 +109,7 @@ interface LandingPageSettings {
     cta_cards: CTACard[];
     gallery_images?: string[];
     layout_sections?: LayoutSectionKey[];
-    section_spacing?: Partial<Record<LayoutSectionKey, SectionSpacing>> & Record<string, SectionSpacing | number | undefined>;
+    section_spacing?: Partial<Record<LayoutSectionKey, SectionSpacing>> & Record<string, string | number | undefined>;
     verified_badge: boolean;
     verified_badge_style: "chip" | "solid";
     show_active_now?: boolean;

@@ -151,7 +151,7 @@ export interface LandingPageSettings {
   // Layout + spacing (optional)
   layout_sections?: LayoutSectionKey[];
   section_spacing?: Partial<Record<LayoutSectionKey, SectionSpacing>> &
-    Record<string, SectionSpacing | number | undefined>;
+    Record<string, string | number | undefined>;
 
   // Badges / meta
   verified_badge: boolean;
