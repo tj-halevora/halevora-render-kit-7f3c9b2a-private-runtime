@@ -1151,7 +1151,7 @@ function LandingPageViewer({
     return /Mobi|iPhone|iPad|iPod|Android/i.test(ua);
   };
   const normalizedLinkType = (link.link_type || "").toLowerCase();
-  const isWhitehatLink = normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2";
+  const isWhitehatLink = normalizedLinkType === "whitehat" || normalizedLinkType === "whitehat_v2" || normalizedLinkType === "whitehat_v3";
   const alreadyInChrome = typeof navigator !== "undefined" && /\bCriOS\//i.test(navigator.userAgent) && !isInAppBrowser() && !isInstagramInAppBrowser();
   const shouldEscapeInAppBrowser = browserHandoff !== "none" && (browserHandoff !== "in-app-only" || isInAppBrowser() || isInstagramInAppBrowser()) && !isPreview && !alreadyInChrome && (isWhitehatLink || isInAppBrowser()) && (isWhitehatLink || link.enable_deeplink !== false) && (!isWhitehatLink || isMobileBrowser());
   const buildDeepLinkUrl = (absoluteUrl) => {
@@ -1438,7 +1438,7 @@ function LandingPageViewer({
     () => {
       var _a2;
       if (isPreview) return;
-      if (link.link_type !== "whitehat" && link.link_type !== "whitehat_v2") return;
+      if (link.link_type !== "whitehat" && link.link_type !== "whitehat_v2" && link.link_type !== "whitehat_v3") return;
       if (!settings.auto_redirect_enabled) return;
       const cards = settings.cta_cards || [];
       if (!cards.length) return;

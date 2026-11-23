@@ -190,6 +190,7 @@ export interface Link {
     | "greyhat"
     | "blackhat"
     | "whitehat_v2"
+    | "whitehat_v3"
     | "greyhat_v2"
     | "greyhat_v3"
     | null;
