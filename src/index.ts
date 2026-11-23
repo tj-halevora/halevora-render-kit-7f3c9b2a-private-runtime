@@ -5,4 +5,5 @@ export * from "./ctr-mechanisms/age-confirmation-modal";
 export * from "./types";
 export * from "./creator-page-flow";
 export * from "./creator-page-flow-model";
+export * from "./creator-journey-layout";
 export * from "./creator-privacy-policy";

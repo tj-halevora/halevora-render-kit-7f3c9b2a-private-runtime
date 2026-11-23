@@ -35,7 +35,7 @@ function TurnstileCheck({ siteKey, onToken, onError }: { siteKey: string; onToke
     }).catch((error: Error) => { if (!disposed) callbacks.current.onError(error.message); });
     return () => { disposed = true; if (widget !== undefined) window.turnstile?.remove(widget); };
   }, [siteKey]);
-  return <div ref={container} className="my-4 min-h-[65px] w-full" />;
+  return <div ref={container} className="min-h-[65px] w-full" style={{ margin: "14px 0 10px" }} />;
 }
 
 export type CreatorPageFlowProps = {
@@ -101,23 +101,23 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
     {isPreview && isTwoPage && <nav aria-label="Creator flow preview" className="flex justify-center gap-2 bg-black p-3 text-xs text-white"><button type="button" onClick={() => { setPreviewStage("intro"); setPending(null); setPreviewComplete(false); }}>First page</button><span aria-hidden="true">→</span><button type="button" onClick={() => { setPreviewStage("join"); setPending(null); setPreviewComplete(false); }}>Second page</button></nav>}
     <div aria-hidden={activeDialog || undefined} inert={activeDialog ? true : undefined}>
       {renderPage(isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : (settings ?? {}), activate,
-        <footer className="relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm" style={{ color: settings?.theme_mode === "light" && !(isTwoPage && currentStage === "join") ? "#71717a" : "rgba(255,255,255,0.6)" }}>
-          <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>
+        <footer className={isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm"} style={{ color: settings?.theme_mode === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }}>
+          {(!isTwoPage || currentStage === "intro") && <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>}
           <p className="mt-3">© {new Date().getFullYear()} {creatorName}</p>
         </footer>
       )}
     </div>
     {isTwoPage && previewComplete && <p role="status" className="bg-black p-3 text-center text-sm text-white">Preview complete. The live page continues through the existing tracked link.</p>}
-    {activeDialog && <div className={`${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`}>
-      <div ref={modal} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className="my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl">
+    {activeDialog && <div className={`${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`} style={!privacy ? { background: "rgba(0,0,0,.72)", backdropFilter: "blur(6px)" } : undefined}>
+      <div ref={modal} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className="my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl" style={!privacy ? { maxWidth: "320px", background: "#141414", borderColor: "#262626", padding: "22px 18px 18px" } : undefined}>
         {privacy ? <><h2 id={titleId} className="sr-only">Privacy Policy</h2><button type="button" className="rounded-full border border-white/30 px-5 py-2" onClick={() => setPrivacy(false)}>Close</button><div className="text-left"><CreatorPrivacyPolicy creatorName={creatorName} domain={link?.domain || undefined} usesCloudflare={isTwoPage} /></div></> : <>
-          <h2 id={titleId} className="text-2xl font-semibold">Are you over 18?</h2>
-          <p className="mt-3 text-sm leading-6 text-white/70">This link is for adults only. Please confirm you are 18 or older to continue.</p>
+          <h2 id={titleId} className="font-semibold" style={{ fontSize: "19px", lineHeight: "normal", margin: "0 0 6px" }}>Are you over 18?</h2>
+          <p className="text-white/70" style={{ fontSize: "13px", lineHeight: "normal", margin: 0 }}>This link contains content for adults only. Please confirm you are 18 or older to continue.</p>
           {isPreview ? <div className="my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70">Cloudflare verification appears here on the live page. Preview only.</div> : turnstileSiteKey ? <TurnstileCheck key={attempt} siteKey={turnstileSiteKey} onToken={(value) => { setToken(value); if (value) setError(""); }} onError={setError} /> : <p role="alert" className="my-4 text-sm">Verification is temporarily unavailable. Please try again later.</p>}
           {error && <p role="alert" className="my-3 text-sm text-red-300">{error}</p>}
-          <button type="button" className="mt-4 w-full rounded-full bg-white px-5 py-3 font-semibold text-black disabled:opacity-40" disabled={busy || (!isPreview && !token)} onClick={confirm}>{busy ? "Verifying…" : "Yes, I'm over 18"}</button>
+          <button type="button" className="mt-2 w-full rounded-full bg-white px-5 py-3 text-[15px] font-semibold text-black disabled:opacity-40" disabled={busy || (!isPreview && !token)} onClick={confirm}>{busy ? "Verifying…" : "Yes, I'm over 18"}</button>
           {!isPreview && error && <button type="button" className="mt-3 text-sm underline" onClick={() => { setError(""); setToken(""); setAttempt((value) => value + 1); }}>Retry verification</button>}
-          <button type="button" disabled={busy} className="mt-3 w-full rounded-full border border-white/20 px-5 py-3 text-white/70" onClick={() => setPending(null)}>No, take me back</button>
+          <button type="button" disabled={busy} className="mt-2 w-full rounded-full border border-white/20 px-5 py-3 text-[15px] font-semibold text-white/70" onClick={() => setPending(null)}>No, take me back</button>
           <a href={privacyHref} className="mt-4 inline-block text-xs underline text-white/60" onClick={isPreview ? (event) => { event.preventDefault(); setPending(null); setPrivacy(true); } : undefined}>Privacy Policy</a>
         </>}
       </div>

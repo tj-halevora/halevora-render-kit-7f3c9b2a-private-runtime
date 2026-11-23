@@ -20,23 +20,22 @@ test('first page has one neutral internal CTA; second page retains every origina
   assert.equal(join.cta_cards[0].title, 'chat with me');
   assert.equal(join.cta_cards[0].style.type, 'solid');
   assert.equal(join.cta_cards[0].style.background_image, undefined);
-  assert.equal(join.__creator_join_text_only, true);
-  assert.deepEqual(Array.from(join.layout_sections), ['bio', 'cta_block']);
+  assert.equal(intro.__creator_journey_stage, 'intro');
+  assert.equal(join.__creator_journey_stage, 'join');
   assert.equal(join.auto_redirect_enabled, false);
   assert.equal(JSON.stringify(settings), original);
 });
-test('text-only second page clears all media and card decorations without editing saved settings or destinations', () => {
+test('photo journey preserves creator media and every tracked destination without editing saved settings', () => {
   const settings = { theme_mode: 'light', profile_display_mode: 'video_background', avatar_url: '/a/photo', header_video_url: '/a/video', header_video_poster_url: '/a/poster', gallery_images: ['/a/gallery'], voice_note_url: '/a/voice', social_links: [{url: 'https://social.example'}], cta_cards: [{id:'paid',title:'Original',description:'Original description',url:'/go/private/paid?ecid=saved&utm_content=one&utm_content=two',order:2,open_in_new_tab:true,style:{type:'video',background_video:'/a/cta-video',logo_icon:'of-local',brand_asset:'/brand.svg'},ctr_mechanisms:{blur_overlay:{enabled:true}}}] };
   const original = JSON.stringify(settings);
   const intro = creatorJourneySettings(settings, {}, 'intro', '/join/private');
   const join = creatorJourneySettings(settings, {}, 'join', '/join/private');
   assert.equal(intro.avatar_url, settings.avatar_url);
   assert.equal(intro.header_video_url, settings.header_video_url);
-  assert.equal(intro.__creator_join_text_only, undefined);
-  for(const key of ['avatar_url','header_video_url','header_video_poster_url','voice_note_url']) assert.equal(join[key], null);
-  assert.equal(join.gallery_images.length, 0); assert.equal(join.social_links.length, 0);
-  assert.equal(join.bio, 'More of my content. Tap below to chat with me.');
-  assert.equal(join.theme_mode, 'dark');
+  assert.equal(intro.cta_cards[0].title, 'more of me');
+  assert.equal(join.avatar_url, settings.avatar_url);
+  assert.equal(join.header_video_poster_url, settings.header_video_poster_url);
+  assert.equal(join.gallery_images.length, 0); assert.equal(join.voice_note_url, null);
   const card=join.cta_cards[0];
   for(const key of ['id','url','order','open_in_new_tab']) assert.equal(card[key], settings.cta_cards[0][key]);
   assert.equal(card.description, null); assert.equal(card.ctr_mechanisms, null);
