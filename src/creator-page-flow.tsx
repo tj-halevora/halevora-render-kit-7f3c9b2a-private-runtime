@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useId, useRef, useState } from "react";
-import { appendCreatorJourneySearch, creatorDisplayName, creatorJourneySettings, type CreatorPageStage } from "./creator-page-flow-model";
+import { appendCreatorJourneySearch, creatorDisplayName, creatorJourneySettings, creatorUsesTwoPageFlow, type CreatorPageStage } from "./creator-page-flow-model";
 import { CreatorPrivacyPolicy } from "./creator-privacy-policy";
 
 type TurnstileApi = { render: (node: HTMLElement, options: Record<string, unknown>) => string; remove: (id: string) => void };
@@ -54,11 +54,12 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [previewComplete, setPreviewComplete] = useState(false);
+  const isTwoPage = creatorUsesTwoPageFlow(link?.link_type);
   const currentStage = isPreview ? previewStage : stage;
   const modal = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const creatorName = ownerName || link?.creator_name || creatorDisplayName(settings, link);
-  const activeDialog = Boolean(pending || privacy);
+  const activeDialog = Boolean((isTwoPage && pending) || privacy);
   useEffect(() => {
     if (!activeDialog) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -78,6 +79,7 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
   }, [activeDialog, busy, isPreview]);
 
   const activate = (url: string, proceed: (options?: { track?: boolean }) => void) => {
+    if (!isTwoPage) return false;
     if (currentStage === "intro") {
       if (isPreview) { setPreviewStage("join"); setPreviewComplete(false); }
       else proceed({ track: false });
@@ -87,7 +89,7 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
     return true;
   };
   const confirm = async () => {
-    if (!pending || busy) return;
+    if (!isTwoPage || !pending || busy) return;
     if (isPreview) { setPending(null); setPreviewComplete(true); return; }
     if (!token || !verify) return;
     setBusy(true); setError("");
@@ -95,20 +97,20 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
     catch (failure) { setError(failure instanceof Error ? failure.message : "Verification failed. Please try again."); setToken(""); setAttempt((value) => value + 1); }
     finally { setBusy(false); }
   };
-  return <div className="relative" data-creator-stage={currentStage}>
-    {isPreview && <nav aria-label="Creator flow preview" className="flex justify-center gap-2 bg-black p-3 text-xs text-white"><button type="button" onClick={() => { setPreviewStage("intro"); setPending(null); setPreviewComplete(false); }}>First page</button><span aria-hidden="true">→</span><button type="button" onClick={() => { setPreviewStage("join"); setPending(null); setPreviewComplete(false); }}>Second page</button></nav>}
+  return <div className="relative" data-creator-stage={isTwoPage ? currentStage : "single"}>
+    {isPreview && isTwoPage && <nav aria-label="Creator flow preview" className="flex justify-center gap-2 bg-black p-3 text-xs text-white"><button type="button" onClick={() => { setPreviewStage("intro"); setPending(null); setPreviewComplete(false); }}>First page</button><span aria-hidden="true">→</span><button type="button" onClick={() => { setPreviewStage("join"); setPending(null); setPreviewComplete(false); }}>Second page</button></nav>}
     <div aria-hidden={activeDialog || undefined} inert={activeDialog ? true : undefined}>
-      {renderPage(creatorJourneySettings(settings, link, currentStage, joinHref), activate,
+      {renderPage(isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : (settings ?? {}), activate,
         <footer className="relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm" style={{ color: settings?.theme_mode === "light" ? "#71717a" : "rgba(255,255,255,0.6)" }}>
           <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>
           <p className="mt-3">© {new Date().getFullYear()} {creatorName}</p>
         </footer>
       )}
     </div>
-    {previewComplete && <p role="status" className="bg-black p-3 text-center text-sm text-white">Preview complete. The live page continues through the existing tracked link.</p>}
+    {isTwoPage && previewComplete && <p role="status" className="bg-black p-3 text-center text-sm text-white">Preview complete. The live page continues through the existing tracked link.</p>}
     {activeDialog && <div className={`${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`}>
       <div ref={modal} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className="my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl">
-        {privacy ? <><h2 id={titleId} className="sr-only">Privacy Policy</h2><button type="button" className="rounded-full border border-white/30 px-5 py-2" onClick={() => setPrivacy(false)}>Close</button><div className="text-left"><CreatorPrivacyPolicy creatorName={creatorName} domain={link?.domain || undefined} /></div></> : <>
+        {privacy ? <><h2 id={titleId} className="sr-only">Privacy Policy</h2><button type="button" className="rounded-full border border-white/30 px-5 py-2" onClick={() => setPrivacy(false)}>Close</button><div className="text-left"><CreatorPrivacyPolicy creatorName={creatorName} domain={link?.domain || undefined} usesCloudflare={isTwoPage} /></div></> : <>
           <h2 id={titleId} className="text-2xl font-semibold">Are you over 18?</h2>
           <p className="mt-3 text-sm leading-6 text-white/70">This link is for adults only. Please confirm you are 18 or older to continue.</p>
           {isPreview ? <div className="my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70">Cloudflare verification appears here on the live page. Preview only.</div> : turnstileSiteKey ? <TurnstileCheck key={attempt} siteKey={turnstileSiteKey} onToken={(value) => { setToken(value); if (value) setError(""); }} onError={setError} /> : <p role="alert" className="my-4 text-sm">Verification is temporarily unavailable. Please try again later.</p>}

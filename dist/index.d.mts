@@ -177,6 +177,8 @@ interface AgeConfirmationModalProps {
 }
 declare function AgeConfirmationModal({ isOpen, onConfirm, onCancel, confirmHref, confirmTargetBlank, children, }: AgeConfirmationModalProps): react_jsx_runtime.JSX.Element;
 
+/** The two-page journey is an explicit V3 feature; legacy settings stay intact. */
+declare function creatorUsesTwoPageFlow(linkType: unknown): boolean;
 type CreatorPageStage = "intro" | "join";
 declare function creatorDisplayName(settings: any, link: any): string;
 /** Retain repeated campaign parameters, without allowing the query to select a destination. */
@@ -209,9 +211,10 @@ type CreatorPageFlowProps = {
 declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage, isPreview, joinHref, privacyHref, turnstileSiteKey, verify, renderPage }: CreatorPageFlowProps): react_jsx_runtime.JSX.Element;
 
 /** Deliberately describes implemented behavior; no invented legal entity or retention promise. */
-declare function CreatorPrivacyPolicy({ creatorName, domain }: {
+declare function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare }: {
     creatorName: string;
     domain?: string;
+    usesCloudflare?: boolean;
 }): react_jsx_runtime.JSX.Element;
 
-export { AgeConfirmationModal, type AgeConfirmationModalProps, type CTACard, type CTACardStyle, CTACardWithMechanisms, CreatorPageFlow, type CreatorPageFlowProps, type CreatorPageStage, CreatorPrivacyPolicy, type LandingPageSettings, LandingPageViewer, type LayoutSectionKey, type Link, ModernAudioPlayer, type SectionSpacing, type SocialLink, appendCreatorJourneySearch, creatorDisplayName, creatorJourneySettings };
+export { AgeConfirmationModal, type AgeConfirmationModalProps, type CTACard, type CTACardStyle, CTACardWithMechanisms, CreatorPageFlow, type CreatorPageFlowProps, type CreatorPageStage, CreatorPrivacyPolicy, type LandingPageSettings, LandingPageViewer, type LayoutSectionKey, type Link, ModernAudioPlayer, type SectionSpacing, type SocialLink, appendCreatorJourneySearch, creatorDisplayName, creatorJourneySettings, creatorUsesTwoPageFlow };

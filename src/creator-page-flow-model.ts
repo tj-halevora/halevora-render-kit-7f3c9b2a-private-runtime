@@ -1,3 +1,8 @@
+/** The two-page journey is an explicit V3 feature; legacy settings stay intact. */
+export function creatorUsesTwoPageFlow(linkType: unknown): boolean {
+  return linkType === "whitehat_v3";
+}
+
 export type CreatorPageStage = "intro" | "join";
 
 export function creatorDisplayName(settings: any, link: any): string {

@@ -1,7 +1,7 @@
 import React from "react";
 
 /** Deliberately describes implemented behavior; no invented legal entity or retention promise. */
-export function CreatorPrivacyPolicy({ creatorName, domain }: { creatorName: string; domain?: string }) {
+export function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }: { creatorName: string; domain?: string; usesCloudflare?: boolean }) {
   return (
     <article className="mx-auto max-w-3xl space-y-5 px-5 py-10 text-sm leading-7">
       <h1 className="text-3xl font-semibold">Privacy Policy — {creatorName}</h1>
@@ -10,9 +10,9 @@ export function CreatorPrivacyPolicy({ creatorName, domain }: { creatorName: str
       <h2 className="text-xl font-semibold">Information collected</h2>
       <p>The website processes your IP address, browser and device information, referring page, approximate location derived from your IP address, page visits, link clicks, and campaign or external click identifiers included in the URL. These help operate the page, understand traffic and measure link performance.</p>
       <h2 className="text-xl font-semibold">Cookies and browser storage</h2>
-      <p>First-party cookies and browser storage are used for visitor and session identifiers, consistent page variants, and a short-lived age-confirmation and security-verification record. Browser settings let you clear or restrict this storage; doing so may affect functionality. The age confirmation records your declaration that you are at least 18; it does not collect a date of birth or verify your identity.</p>
-      <h2 className="text-xl font-semibold">Security verification</h2>
-      <p>Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See <a className="underline" href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare&apos;s Privacy Policy</a>.</p>
+      <p>First-party cookies and browser storage are used for visitor and session identifiers and consistent page variants{usesCloudflare ? ", plus a short-lived age-confirmation and security-verification record" : ""}. Browser settings let you clear or restrict this storage; doing so may affect functionality. Where age confirmation is shown, it asks you to declare that you are at least 18; it does not collect a date of birth or verify your identity.</p>
+      {usesCloudflare && <><h2 className="text-xl font-semibold">Security verification</h2>
+      <p>Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See <a className="underline" href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare&apos;s Privacy Policy</a>.</p></>}
       <h2 className="text-xl font-semibold">Hosting, analytics and destination services</h2>
       <p>Technical service providers process information needed for hosting, media delivery, security and analytics. Where a link uses a tracking service, that service may receive campaign identifiers and connect a visit with later subscriptions or purchases on the destination service. Connected tracking integrations may report attributed events to configured advertising or analytics services. Processing can take place in other countries.</p>
       <p>External social profiles and destination websites have their own privacy policies and terms. This policy covers this creator page, rather than those external services. Following an external link shares information needed to open and, where configured, attribute that visit.</p>
