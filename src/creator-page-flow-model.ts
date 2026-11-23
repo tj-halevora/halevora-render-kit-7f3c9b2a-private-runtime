@@ -24,9 +24,19 @@ export function appendCreatorJourneySearch(target: string, search: string): stri
 
 export function creatorJourneySettings(settings: any, link: any, stage: CreatorPageStage, joinHref: string) {
   const source = settings ?? {};
+  const spacing = source.section_spacing || {};
+  const text = (key: string, fallback: string, max: number, allowEmpty = false) => {
+    const value = spacing[key];
+    if (typeof value !== "string") return fallback;
+    const clean = value.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
+    return clean || (allowEmpty ? "" : fallback);
+  };
+  const introText = text("__creator_intro_button_text", "more of me", 80);
+  const joinText = text("__creator_join_button_text", "chat with me", 80);
+  const joinDescription = text("__creator_join_description", "More of my content. Tap below to chat with me.", 240, true);
   const cards = Array.isArray(source.cta_cards) ? source.cta_cards : [];
   const fallback = { id: "default", title: "Chat with me", url: link?.destination_url || "", order: 0, style: { type: "solid", background_color: "#ffffff", text_color: "#08080a" } };
-  const introCard = { ...fallback, id: cards[0]?.id || "default", title: "more of me", url: joinHref };
+  const introCard = { ...fallback, id: cards[0]?.id || "default", title: introText, url: joinHref };
   return {
     background_color: "#08080a", background_gradient: { start: "#08080a", end: "#08080a" },
     theme_mode: "dark", button_style: "solid", button_color: "#ffffff", profile_display_mode: "full",
@@ -34,6 +44,7 @@ export function creatorJourneySettings(settings: any, link: any, stage: CreatorP
     show_domain_handle: false, ...source,
     display_name: creatorDisplayName(source, link),
     __creator_journey_stage: stage,
+    __creator_join_description: joinDescription,
     // The visitor explicitly chooses each step; a stored timer cannot skip the age gate.
     auto_redirect_enabled: false,
     layout_sections: Array.from(new Set([...(source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"]), "cta_block"])),
@@ -42,7 +53,7 @@ export function creatorJourneySettings(settings: any, link: any, stage: CreatorP
     ...(stage === "join" ? {
       // Only the presentation changes; every saved tracked capability survives.
       cta_cards: (cards.length ? cards : [fallback]).map((card: any) => ({
-        ...card, title: "chat with me", description: null,
+        ...card, title: joinText, description: null,
         style: { ...fallback.style }, ctr_mechanisms: null, require_18plus: false,
       })),
     } : {}),

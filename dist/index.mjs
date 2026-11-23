@@ -19,9 +19,19 @@ function appendCreatorJourneySearch(target, search) {
 function creatorJourneySettings(settings, link, stage, joinHref) {
   var _a;
   const source = settings != null ? settings : {};
+  const spacing = source.section_spacing || {};
+  const text = (key, fallback2, max, allowEmpty = false) => {
+    const value = spacing[key];
+    if (typeof value !== "string") return fallback2;
+    const clean = value.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
+    return clean || (allowEmpty ? "" : fallback2);
+  };
+  const introText = text("__creator_intro_button_text", "more of me", 80);
+  const joinText = text("__creator_join_button_text", "chat with me", 80);
+  const joinDescription = text("__creator_join_description", "More of my content. Tap below to chat with me.", 240, true);
   const cards = Array.isArray(source.cta_cards) ? source.cta_cards : [];
   const fallback = { id: "default", title: "Chat with me", url: (link == null ? void 0 : link.destination_url) || "", order: 0, style: { type: "solid", background_color: "#ffffff", text_color: "#08080a" } };
-  const introCard = { ...fallback, id: ((_a = cards[0]) == null ? void 0 : _a.id) || "default", title: "more of me", url: joinHref };
+  const introCard = { ...fallback, id: ((_a = cards[0]) == null ? void 0 : _a.id) || "default", title: introText, url: joinHref };
   return {
     background_color: "#08080a",
     background_gradient: { start: "#08080a", end: "#08080a" },
@@ -37,6 +47,7 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
     ...source,
     display_name: creatorDisplayName(source, link),
     __creator_journey_stage: stage,
+    __creator_join_description: joinDescription,
     // The visitor explicitly chooses each step; a stored timer cannot skip the age gate.
     auto_redirect_enabled: false,
     layout_sections: Array.from(/* @__PURE__ */ new Set([...source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"], "cta_block"])),
@@ -47,7 +58,7 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
       // Only the presentation changes; every saved tracked capability survives.
       cta_cards: (cards.length ? cards : [fallback]).map((card) => ({
         ...card,
-        title: "chat with me",
+        title: joinText,
         description: null,
         style: { ...fallback.style },
         ctr_mechanisms: null,
@@ -110,7 +121,7 @@ function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial
         stage === "intro" && settings.bio && /* @__PURE__ */ jsx("p", { className: "hvj-tag", children: settings.bio })
       ] })
     ] }),
-    stage === "join" && /* @__PURE__ */ jsx("p", { className: "hvj-sub", children: "More of my content. Tap below to chat with me." }),
+    stage === "join" && settings.__creator_join_description && /* @__PURE__ */ jsx("p", { className: "hvj-sub", children: settings.__creator_join_description }),
     [...settings.cta_cards || []].sort((a, b) => (a.order || 0) - (b.order || 0)).map((card) => /* @__PURE__ */ jsx(React.Fragment, { children: renderAction(card, "hvj-button") }, card.id)),
     stage === "intro" && socials.length > 0 && /* @__PURE__ */ jsx("nav", { className: "hvj-socials", "aria-label": "Socials", children: socials.map((social, index) => {
       const platform = String(social.platform || "").toLowerCase();

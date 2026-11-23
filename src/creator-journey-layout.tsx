@@ -56,7 +56,7 @@ export function CreatorJourneyLayout({ settings, pageFooter, renderAction, rende
         {stage === "intro" && settings.bio && <p className="hvj-tag">{settings.bio}</p>}
       </div>
     </div>
-    {stage === "join" && <p className="hvj-sub">More of my content. Tap below to chat with me.</p>}
+    {stage === "join" && settings.__creator_join_description && <p className="hvj-sub">{settings.__creator_join_description}</p>}
     {[...(settings.cta_cards || [])].sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((card: any) => <React.Fragment key={card.id}>{renderAction(card, "hvj-button")}</React.Fragment>)}
     {stage === "intro" && socials.length > 0 && <nav className="hvj-socials" aria-label="Socials">{socials.map((social: any, index: number) => {
       const platform = String(social.platform || "").toLowerCase();
