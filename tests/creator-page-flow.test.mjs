@@ -35,7 +35,7 @@ test('photo journey preserves creator media and every tracked destination withou
   assert.equal(intro.cta_cards[0].title, 'more of me');
   assert.equal(join.avatar_url, settings.avatar_url);
   assert.equal(join.header_video_poster_url, settings.header_video_poster_url);
-  assert.equal(join.gallery_images.length, 0); assert.equal(join.voice_note_url, null);
+  assert.equal(join.gallery_images, settings.gallery_images); assert.equal(join.voice_note_url, settings.voice_note_url);
   const card=join.cta_cards[0];
   for(const key of ['id','url','order','open_in_new_tab']) assert.equal(card[key], settings.cta_cards[0][key]);
   assert.equal(card.description, null); assert.equal(card.ctr_mechanisms, null);
@@ -65,4 +65,11 @@ test('editable journey copy changes presentation only and retains exact capabili
 test('empty custom labels retain defaults, description can be hidden, and text is bounded',()=>{
  const s={section_spacing:{__creator_intro_button_text:'  ',__creator_join_button_text:'x'.repeat(120),__creator_join_description:''}};
  assert.equal(creatorJourneySettings(s,{},'intro','/join/v').cta_cards[0].title,'more of me');const join=creatorJourneySettings(s,{},'join','/join/v');assert.equal(join.cta_cards[0].title.length,80);assert.equal(join.__creator_join_description,'');assert.equal(creatorJourneySettings({section_spacing:{__creator_join_button_text:null}}, {},'join','/join/v').cta_cards[0].title,'chat with me');
+});
+
+test('explicit layout visibility survives both stages, including a disabled CTA block and empty layout',()=>{
+ for(const layout of [[],['header','social_block'],['bio','cta_block','voice_note','gallery']]){
+  const source={layout_sections:layout,cta_cards:[{id:'own',url:'/go/private/own'}],gallery_images:['/a/private/gallery'],voice_note_url:'/a/private/voice'};
+  for(const stage of ['intro','join']){const result=creatorJourneySettings(source,{},stage,'/join');assert.deepEqual(Array.from(result.layout_sections),layout);assert.equal(result.gallery_images,source.gallery_images);assert.equal(result.voice_note_url,source.voice_note_url);assert.equal(source.cta_cards[0].url,'/go/private/own');}
+ }
 });

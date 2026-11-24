@@ -47,9 +47,8 @@ export function creatorJourneySettings(settings: any, link: any, stage: CreatorP
     __creator_join_description: joinDescription,
     // The visitor explicitly chooses each step; a stored timer cannot skip the age gate.
     auto_redirect_enabled: false,
-    layout_sections: Array.from(new Set([...(source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"]), "cta_block"])),
+    layout_sections: Array.isArray(source.layout_sections) ? [...source.layout_sections] : ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"],
     cta_cards: stage === "intro" ? [introCard] : (cards.length ? cards : [fallback]).map((card: any) => ({ ...card, require_18plus: false })),
-    gallery_images: [], voice_note_url: null,
     ...(stage === "join" ? {
       // Only the presentation changes; every saved tracked capability survives.
       cta_cards: (cards.length ? cards : [fallback]).map((card: any) => ({

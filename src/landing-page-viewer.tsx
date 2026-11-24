@@ -879,16 +879,197 @@ useEffect(() => {
       ? { height: `${settings.header_image_height}px` }
       : undefined;
 
+  const voiceSection = <>
+              {/* Voice Note */}
+              {isSectionEnabled("voice_note") && settings.voice_note_url && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45, duration: 0.3 }}
+                  className={`w-full max-w-sm ${getSectionSpacingClass(
+                    "voice_note",
+                  )}`}
+                  style={{ order: getSectionOrder("voice_note") }}
+                >
+                  <ModernAudioPlayer
+                    src={settings.voice_note_url}
+                    theme={settings.theme_mode}
+                  />
+                </motion.div>
+              )}
+
+  </>;
+  const lightboxSection = <>
+              {/* Gallery lightbox */}
+              {lightboxUrl && (
+                <div
+                  className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
+                  onClick={() => setLightboxUrl(null)}
+                >
+                  <div
+                    className="max-w-3xl max-h-[90vh] px-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <img
+                      src={lightboxUrl}
+                      alt="Gallery full view"
+                      className="w-full h-full object-contain rounded-2xl"
+                    />
+                    <div className="mt-3 flex justify-center">
+                      <button
+                        type="button"
+                        className="px-4 py-1.5 rounded-full bg-white/90 text-sm font-medium text-black hover:bg-white"
+                        onClick={() => setLightboxUrl(null)}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+  </>;
+  const gallerySection = <>
+              {/* Gallery */}
+              {isSectionEnabled("gallery") && hasGallery && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.3 }}
+                  className={`w-full ${getSectionSpacingClass("gallery")}`}
+                  style={{ order: getSectionOrder("gallery") }}
+                >
+                  {(() => {
+                    const total = galleryImages.length;
+                    if (total === 0) return null;
+
+                    const index = Math.min(activeGalleryIndex, total - 1);
+
+                    const goPrev = () => {
+                      if (total <= 1) return;
+                      setActiveGalleryIndex(
+                        (prev) => (prev - 1 + total) % total,
+                      );
+                    };
+
+                    const goNext = () => {
+                      if (total <= 1) return;
+                      setActiveGalleryIndex((prev) => (prev + 1) % total);
+                    };
+
+                    const handleTouchStart = (
+                      e: React.TouchEvent<HTMLDivElement>,
+                    ) => {
+                      galleryTouchStartX.current = e.touches[0].clientX;
+                    };
+
+                    const handleTouchEnd = (
+                      e: React.TouchEvent<HTMLDivElement>,
+                    ) => {
+                      if (galleryTouchStartX.current == null) return;
+                      const deltaX =
+                        e.changedTouches[0].clientX -
+                        galleryTouchStartX.current;
+                      const threshold = 40;
+                      if (deltaX > threshold) {
+                        goPrev();
+                      } else if (deltaX < -threshold) {
+                        goNext();
+                      }
+                      galleryTouchStartX.current = null;
+                    };
+
+                    return (
+                      <>
+                        <div
+                          className="relative w-full flex items-center justify-center"
+                          onTouchStart={handleTouchStart}
+                          onTouchEnd={handleTouchEnd}
+                        >
+                          <div className="relative w-full max-w-md h-64 sm:h-72 overflow-visible flex items-center justify-center">
+                            {(() => {
+                              const cards = [];
+                              // Show up to 5 cards: two to the left, center, two to the right
+                              for (let offset = -2; offset <= 2; offset++) {
+                                const imgIndex =
+                                  (index + offset + total) % total;
+                                const url = galleryImages[imgIndex];
+                                const absOffset = Math.abs(offset);
+                                const isActive = offset === 0;
+                                const translateX = offset * 120;
+                                const scale = isActive ? 1 : 0.85;
+                                const opacity = isActive ? 1 : 0.35;
+                                const blur = isActive ? "none" : "blur(3px)";
+                                const zIndex = 20 - absOffset;
+
+                                cards.push(
+                                  <div
+                                    key={`gallery-card-${offset}-${imgIndex}`}
+                                    className="absolute rounded-3xl overflow-hidden shadow-2xl bg-default-100 cursor-pointer transition-all duration-300 ease-out"
+                                    style={{
+                                      width: "13rem",
+                                      height: "17rem",
+                                      transform: `translateX(${translateX}%) scale(${scale})`,
+                                      opacity,
+                                      filter: blur,
+                                      zIndex,
+                                    }}
+                                    onClick={() => {
+                                      if (isActive) {
+                                        setLightboxUrl(url);
+                                      } else {
+                                        setActiveGalleryIndex(imgIndex);
+                                      }
+                                    }}
+                                  >
+                                    <img
+                                      src={url}
+                                      alt={`Gallery ${imgIndex + 1}`}
+                                      className="w-full h-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  </div>,
+                                );
+                              }
+                              return cards;
+                            })()}
+                          </div>
+                        </div>
+
+                        {total > 1 && (
+                          <div className="mt-5 flex justify-center gap-1.5">
+                            {galleryImages.map((url, dotIndex) => (
+                              <button
+                                key={`${url}-${dotIndex}`}
+                                type="button"
+                                onClick={() => setActiveGalleryIndex(dotIndex)}
+                                className={`h-1.5 rounded-full transition-all ${
+                                  dotIndex === index
+                                    ? "w-4 bg-[#5EC8D6]"
+                                    : "w-1.5 bg-[#5EC8D6]/40"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </motion.div>
+              )}  </>;
+
   if (["intro", "join"].includes((settings as any).__creator_journey_stage)) {
     return <div ref={viewerRootRef} data-halevora-protected={protectPublicContent ? "true" : undefined}
       onContextMenuCapture={preventContentSave} onDragStartCapture={preventContentSave} onDropCapture={preventContentSave} style={contentProtectionStyle}>
       <CreatorJourneyLayout settings={settings} pageFooter={pageFooter}
+      renderExtraSection={key => key === "voice_note" ? settings.voice_note_url ? voiceSection : null : hasGallery ? gallerySection : null}
       renderAction={(card, className) => isPreview
         ? <button type="button" className={className} onClick={() => onCtaActivate?.(card.url, () => {})}>{card.title}</button>
         : <a {...getNativeLinkProps(card.url, true)} className={className}>{card.title}</a>}
       renderSocial={(social, className, icon) => isPreview
         ? <a href={social.url} className={className} aria-label={social.platform || "Social profile"} onClick={(event) => event.preventDefault()}>{icon}</a>
         : <a {...getNativeLinkProps(social.url)} className={className} aria-label={social.platform || "Social profile"}>{icon}</a>} />
+      {isSectionEnabled("gallery") && lightboxSection}
     </div>;
   }
 
@@ -1416,51 +1597,9 @@ useEffect(() => {
                   </div>
                 )}
 
-              {/* Voice Note */}
-              {isSectionEnabled("voice_note") && settings.voice_note_url && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.45, duration: 0.3 }}
-                  className={`w-full max-w-sm ${getSectionSpacingClass(
-                    "voice_note",
-                  )}`}
-                  style={{ order: getSectionOrder("voice_note") }}
-                >
-                  <ModernAudioPlayer
-                    src={settings.voice_note_url}
-                    theme={settings.theme_mode}
-                  />
-                </motion.div>
-              )}
+              {voiceSection}
 
-              {/* Gallery lightbox */}
-              {lightboxUrl && (
-                <div
-                  className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
-                  onClick={() => setLightboxUrl(null)}
-                >
-                  <div
-                    className="max-w-3xl max-h-[90vh] px-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <img
-                      src={lightboxUrl}
-                      alt="Gallery full view"
-                      className="w-full h-full object-contain rounded-2xl"
-                    />
-                    <div className="mt-3 flex justify-center">
-                      <button
-                        type="button"
-                        className="px-4 py-1.5 rounded-full bg-white/90 text-sm font-medium text-black hover:bg-white"
-                        onClick={() => setLightboxUrl(null)}
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {lightboxSection}
 
               {/* Bio */}
               {isSectionEnabled("bio") && settings.bio && (
@@ -2124,133 +2263,9 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Gallery */}
-              {isSectionEnabled("gallery") && hasGallery && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7, duration: 0.3 }}
-                  className={`w-full ${getSectionSpacingClass("gallery")}`}
-                  style={{ order: getSectionOrder("gallery") }}
-                >
-                  {(() => {
-                    const total = galleryImages.length;
-                    if (total === 0) return null;
+              {gallerySection}
 
-                    const index = Math.min(activeGalleryIndex, total - 1);
 
-                    const goPrev = () => {
-                      if (total <= 1) return;
-                      setActiveGalleryIndex(
-                        (prev) => (prev - 1 + total) % total,
-                      );
-                    };
-
-                    const goNext = () => {
-                      if (total <= 1) return;
-                      setActiveGalleryIndex((prev) => (prev + 1) % total);
-                    };
-
-                    const handleTouchStart = (
-                      e: React.TouchEvent<HTMLDivElement>,
-                    ) => {
-                      galleryTouchStartX.current = e.touches[0].clientX;
-                    };
-
-                    const handleTouchEnd = (
-                      e: React.TouchEvent<HTMLDivElement>,
-                    ) => {
-                      if (galleryTouchStartX.current == null) return;
-                      const deltaX =
-                        e.changedTouches[0].clientX -
-                        galleryTouchStartX.current;
-                      const threshold = 40;
-                      if (deltaX > threshold) {
-                        goPrev();
-                      } else if (deltaX < -threshold) {
-                        goNext();
-                      }
-                      galleryTouchStartX.current = null;
-                    };
-
-                    return (
-                      <>
-                        <div
-                          className="relative w-full flex items-center justify-center"
-                          onTouchStart={handleTouchStart}
-                          onTouchEnd={handleTouchEnd}
-                        >
-                          <div className="relative w-full max-w-md h-64 sm:h-72 overflow-visible flex items-center justify-center">
-                            {(() => {
-                              const cards = [];
-                              // Show up to 5 cards: two to the left, center, two to the right
-                              for (let offset = -2; offset <= 2; offset++) {
-                                const imgIndex =
-                                  (index + offset + total) % total;
-                                const url = galleryImages[imgIndex];
-                                const absOffset = Math.abs(offset);
-                                const isActive = offset === 0;
-                                const translateX = offset * 120;
-                                const scale = isActive ? 1 : 0.85;
-                                const opacity = isActive ? 1 : 0.35;
-                                const blur = isActive ? "none" : "blur(3px)";
-                                const zIndex = 20 - absOffset;
-
-                                cards.push(
-                                  <div
-                                    key={`gallery-card-${offset}-${imgIndex}`}
-                                    className="absolute rounded-3xl overflow-hidden shadow-2xl bg-default-100 cursor-pointer transition-all duration-300 ease-out"
-                                    style={{
-                                      width: "13rem",
-                                      height: "17rem",
-                                      transform: `translateX(${translateX}%) scale(${scale})`,
-                                      opacity,
-                                      filter: blur,
-                                      zIndex,
-                                    }}
-                                    onClick={() => {
-                                      if (isActive) {
-                                        setLightboxUrl(url);
-                                      } else {
-                                        setActiveGalleryIndex(imgIndex);
-                                      }
-                                    }}
-                                  >
-                                    <img
-                                      src={url}
-                                      alt={`Gallery ${imgIndex + 1}`}
-                                      className="w-full h-full object-cover"
-                                      loading="lazy"
-                                    />
-                                  </div>,
-                                );
-                              }
-                              return cards;
-                            })()}
-                          </div>
-                        </div>
-
-                        {total > 1 && (
-                          <div className="mt-5 flex justify-center gap-1.5">
-                            {galleryImages.map((url, dotIndex) => (
-                              <button
-                                key={`${url}-${dotIndex}`}
-                                type="button"
-                                onClick={() => setActiveGalleryIndex(dotIndex)}
-                                className={`h-1.5 rounded-full transition-all ${
-                                  dotIndex === index
-                                    ? "w-4 bg-[#5EC8D6]"
-                                    : "w-1.5 bg-[#5EC8D6]/40"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </motion.div>
-              )}
             </div>
           </div>
         </div>
