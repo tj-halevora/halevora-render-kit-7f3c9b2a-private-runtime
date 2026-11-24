@@ -50,10 +50,8 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
     __creator_join_description: joinDescription,
     // The visitor explicitly chooses each step; a stored timer cannot skip the age gate.
     auto_redirect_enabled: false,
-    layout_sections: Array.from(/* @__PURE__ */ new Set([...source.layout_sections || ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"], "cta_block"])),
+    layout_sections: Array.isArray(source.layout_sections) ? [...source.layout_sections] : ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"],
     cta_cards: stage === "intro" ? [introCard] : (cards.length ? cards : [fallback]).map((card) => ({ ...card, require_18plus: false })),
-    gallery_images: [],
-    voice_note_url: null,
     ...stage === "join" ? {
       // Only the presentation changes; every saved tracked capability survives.
       cta_cards: (cards.length ? cards : [fallback]).map((card) => ({
@@ -71,10 +69,12 @@ function creatorJourneySettings(settings, link, stage, joinHref) {
 // src/creator-journey-layout.tsx
 import React from "react";
 import { Icon } from "@iconify/react";
-import { jsx, jsxs } from "react/jsx-runtime";
-function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial }) {
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial, renderExtraSection }) {
   var _a, _b;
   const stage = settings.__creator_journey_stage;
+  const sections = Array.isArray(settings.layout_sections) ? settings.layout_sections : ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"];
+  const enabled = (key) => sections.includes(key);
   const usesVideoCover = ["video", "video_background"].includes(settings.profile_display_mode) || settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background);
   const photo = usesVideoCover ? settings.header_video_poster_url || settings.avatar_url : settings.avatar_url || settings.header_video_poster_url;
   const socials = Array.isArray(settings.social_links) ? settings.social_links : [];
@@ -102,32 +102,42 @@ function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial
       .hvj-button:focus-visible,.hvj-social:focus-visible{outline:2px solid #fff;outline-offset:4px}
       .hvj-socials{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:18px}
       .hvj-social{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:999px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;text-decoration:none}
-      .hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:1.5;color:rgba(255,255,255,.72);margin:14px 0 0}
+      .hvj-extra{width:100%;max-width:360px;overflow:hidden}.hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:1.5;color:rgba(255,255,255,.72);margin:14px 0 0}
       .hvj-footer{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.6);text-align:center}
       .hvj-footer a{color:rgba(255,255,255,.75);text-decoration:none}.hvj-footer p{margin:0}
     ` }),
     /* @__PURE__ */ jsxs("div", { className: "hvj-photo", children: [
-      photo && /* @__PURE__ */ jsx("img", { src: photo, alt: settings.display_name || "Creator", loading: "eager", decoding: "async", style: { objectPosition: settings.header_video_focus || "center" } }),
+      photo && /* @__PURE__ */ jsx("img", { src: photo, alt: enabled("header") ? settings.display_name || "Creator" : "Creator photo", loading: "eager", decoding: "async", style: { objectPosition: settings.header_video_focus || "center" } }),
       /* @__PURE__ */ jsx("div", { className: "hvj-shade" }),
       /* @__PURE__ */ jsxs("div", { className: "hvj-identity", children: [
-        /* @__PURE__ */ jsxs("h1", { className: "hvj-name", children: [
-          settings.display_name,
-          stage === "join" && settings.verified_badge && /* @__PURE__ */ jsxs("svg", { "aria-label": "Verified", role: "img", width: "18", height: "18", viewBox: "0 0 24 24", children: [
-            /* @__PURE__ */ jsx("path", { fill: "#1d9bf0", d: "m12 1 2.9 2.1 3.6.2 1.3 3.4 2.8 2.3-.9 3.5.9 3.5-2.8 2.3-1.3 3.4-3.6.2L12 23l-2.9-2.1-3.6-.2-1.3-3.4L1.4 15l.9-3.5-.9-3.5 2.8-2.3 1.3-3.4 3.6-.2Z" }),
-            /* @__PURE__ */ jsx("path", { fill: "none", stroke: "#fff", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", d: "m7 12 3 3 7-7" })
-          ] })
+        enabled("header") && /* @__PURE__ */ jsxs(Fragment, { children: [
+          /* @__PURE__ */ jsxs("h1", { className: "hvj-name", children: [
+            settings.display_name,
+            stage === "join" && settings.verified_badge && /* @__PURE__ */ jsxs("svg", { "aria-label": "Verified", role: "img", width: "18", height: "18", viewBox: "0 0 24 24", children: [
+              /* @__PURE__ */ jsx("path", { fill: "#1d9bf0", d: "m12 1 2.9 2.1 3.6.2 1.3 3.4 2.8 2.3-.9 3.5.9 3.5-2.8 2.3-1.3 3.4-3.6.2L12 23l-2.9-2.1-3.6-.2-1.3-3.4L1.4 15l.9-3.5-.9-3.5 2.8-2.3 1.3-3.4 3.6-.2Z" }),
+              /* @__PURE__ */ jsx("path", { fill: "none", stroke: "#fff", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", d: "m7 12 3 3 7-7" })
+            ] })
+          ] }),
+          handle && ((_b = settings.section_spacing) == null ? void 0 : _b.__creator_show_handle) === true && /* @__PURE__ */ jsx("p", { className: "hvj-handle", children: handle })
         ] }),
-        handle && ((_b = settings.section_spacing) == null ? void 0 : _b.__creator_show_handle) === true && /* @__PURE__ */ jsx("p", { className: "hvj-handle", children: handle }),
-        stage === "intro" && settings.bio && /* @__PURE__ */ jsx("p", { className: "hvj-tag", children: settings.bio })
+        stage === "intro" && enabled("bio") && settings.bio && /* @__PURE__ */ jsx("p", { className: "hvj-tag", children: settings.bio })
       ] })
     ] }),
-    stage === "join" && settings.__creator_join_description && /* @__PURE__ */ jsx("p", { className: "hvj-sub", children: settings.__creator_join_description }),
-    [...settings.cta_cards || []].sort((a, b) => (a.order || 0) - (b.order || 0)).map((card) => /* @__PURE__ */ jsx(React.Fragment, { children: renderAction(card, "hvj-button") }, card.id)),
-    stage === "intro" && socials.length > 0 && /* @__PURE__ */ jsx("nav", { className: "hvj-socials", "aria-label": "Socials", children: socials.map((social, index) => {
+    stage === "join" && enabled("bio") && settings.__creator_join_description && /* @__PURE__ */ jsx("p", { className: "hvj-sub", children: settings.__creator_join_description }),
+    enabled("cta_block") && [...settings.cta_cards || []].sort((a, b) => (a.order || 0) - (b.order || 0)).map((card) => /* @__PURE__ */ jsx(React.Fragment, { children: renderAction(card, "hvj-button") }, card.id)),
+    stage === "intro" && enabled("social_block") && socials.length > 0 && /* @__PURE__ */ jsx("nav", { className: "hvj-socials", "aria-label": "Socials", children: socials.map((social, index) => {
       const platform = String(social.platform || "").toLowerCase();
       const icon = /instagram/.test(platform) ? "mdi:instagram" : /snapchat/.test(platform) ? "ri:snapchat-fill" : /tiktok/.test(platform) ? "ic:baseline-tiktok" : social.icon || "mdi:link";
       return /* @__PURE__ */ jsx(React.Fragment, { children: renderSocial(social, "hvj-social", /* @__PURE__ */ jsx(Icon, { icon, width: 22, height: 22 })) }, social.id || index);
     }) }),
+    stage === "intro" && enabled("social_block") && settings.show_follower_count && Number(settings.follower_count) > 0 && /* @__PURE__ */ jsxs("p", { className: "hvj-sub", "data-creator-section": "followers", children: [
+      Number(settings.follower_count).toLocaleString(),
+      " followers"
+    ] }),
+    ["voice_note", "gallery"].map((key) => {
+      const content = enabled(key) && renderExtraSection ? renderExtraSection(key) : null;
+      return content ? /* @__PURE__ */ jsx("div", { className: "hvj-extra", "data-creator-section": key, children: content }, key) : null;
+    }),
     pageFooter
   ] });
 }
@@ -287,7 +297,7 @@ import { Button } from "@heroui/react";
 import { Progress } from "@heroui/react";
 import { motion as motion2 } from "framer-motion";
 import { Icon as Icon3 } from "@iconify/react";
-import { Fragment, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
+import { Fragment as Fragment2, jsx as jsx3, jsxs as jsxs3 } from "react/jsx-runtime";
 function ClickToReveal({
   clicksRequired,
   buttonText,
@@ -306,7 +316,7 @@ function ClickToReveal({
   };
   const progress = clickCount / clicksRequired * 100;
   if (isRevealed) {
-    return /* @__PURE__ */ jsx3(Fragment, { children });
+    return /* @__PURE__ */ jsx3(Fragment2, { children });
   }
   return /* @__PURE__ */ jsxs3("div", { className: "relative overflow-hidden rounded-xl", children: [
     /* @__PURE__ */ jsx3("div", { className: "absolute inset-0 bg-black/10 z-[5] flex flex-col items-center justify-center px-4 py-4 rounded-xl", children: /* @__PURE__ */ jsxs3(
@@ -371,7 +381,7 @@ function ClickToReveal({
 import { useState as useState3, useEffect as useEffect2 } from "react";
 import { motion as motion3 } from "framer-motion";
 import { Icon as Icon4 } from "@iconify/react";
-import { Fragment as Fragment2, jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
+import { Fragment as Fragment3, jsx as jsx4, jsxs as jsxs4 } from "react/jsx-runtime";
 function CountdownReveal({
   durationSeconds,
   message,
@@ -392,7 +402,7 @@ function CountdownReveal({
     return () => clearTimeout(timer);
   }, [secondsLeft]);
   if (isRevealed) {
-    return /* @__PURE__ */ jsx4(Fragment2, { children });
+    return /* @__PURE__ */ jsx4(Fragment3, { children });
   }
   return /* @__PURE__ */ jsxs4("div", { className: "relative overflow-hidden rounded-xl", children: [
     /* @__PURE__ */ jsx4("div", { className: "absolute inset-0  bg-black/10 z-[5] flex flex-col items-center justify-center px-4 py-3 rounded-xl", children: /* @__PURE__ */ jsxs4(
@@ -435,7 +445,7 @@ function CountdownReveal({
 import { Chip } from "@heroui/react";
 import { Icon as Icon5 } from "@iconify/react";
 import { motion as motion4 } from "framer-motion";
-import { Fragment as Fragment3, jsx as jsx5 } from "react/jsx-runtime";
+import { Fragment as Fragment4, jsx as jsx5 } from "react/jsx-runtime";
 function ScarcityBadge({
   type,
   count,
@@ -449,7 +459,7 @@ function ScarcityBadge({
     }
     return isSlots ? `Only ${count}/${total} left!` : `${count} watching now`;
   };
-  return /* @__PURE__ */ jsx5(Fragment3, { children: isSlots ? /* @__PURE__ */ jsx5(
+  return /* @__PURE__ */ jsx5(Fragment4, { children: isSlots ? /* @__PURE__ */ jsx5(
     motion4.div,
     {
       initial: { opacity: 0, scale: 0.8 },
@@ -504,7 +514,7 @@ import { useState as useState4 } from "react";
 import { Button as Button2 } from "@heroui/react";
 import { motion as motion5 } from "framer-motion";
 import { Icon as Icon6 } from "@iconify/react";
-import { Fragment as Fragment4, jsx as jsx6, jsxs as jsxs5 } from "react/jsx-runtime";
+import { Fragment as Fragment5, jsx as jsx6, jsxs as jsxs5 } from "react/jsx-runtime";
 function BlurOverlay({
   blurAmount,
   teaserText,
@@ -517,7 +527,7 @@ function BlurOverlay({
     onReveal();
   };
   if (isRevealed) {
-    return /* @__PURE__ */ jsx6(Fragment4, { children });
+    return /* @__PURE__ */ jsx6(Fragment5, { children });
   }
   return /* @__PURE__ */ jsxs5("div", { className: "relative overflow-hidden rounded-xl", children: [
     /* @__PURE__ */ jsx6(
@@ -580,7 +590,7 @@ import { useState as useState5, useEffect as useEffect3 } from "react";
 import { Progress as Progress2 } from "@heroui/react";
 import { motion as motion6 } from "framer-motion";
 import { Icon as Icon7 } from "@iconify/react";
-import { Fragment as Fragment5, jsx as jsx7, jsxs as jsxs6 } from "react/jsx-runtime";
+import { Fragment as Fragment6, jsx as jsx7, jsxs as jsxs6 } from "react/jsx-runtime";
 function ProgressBarReveal({
   durationSeconds,
   message,
@@ -610,7 +620,7 @@ function ProgressBarReveal({
     return () => clearInterval(timer);
   }, [durationSeconds]);
   if (isRevealed) {
-    return /* @__PURE__ */ jsx7(Fragment5, { children });
+    return /* @__PURE__ */ jsx7(Fragment6, { children });
   }
   return /* @__PURE__ */ jsxs6("div", { className: "relative overflow-hidden rounded-xl", children: [
     /* @__PURE__ */ jsx7("div", { className: "absolute rounded-xl inset-0 backdrop-blur-sm bg-black/40 z-[5] flex items-center justify-center px-3 py-3", children: /* @__PURE__ */ jsxs6(motion6.div, { className: "text-center space-y-1 w-full max-w-[210px] mx-auto", children: [
@@ -831,7 +841,7 @@ function CTACardWithMechanisms({
 // src/ctr-mechanisms/age-confirmation-modal.tsx
 import { motion as motion9 } from "framer-motion";
 import { ButtonGlass } from "shadcn-glass-ui/components";
-import { Fragment as Fragment6, jsx as jsx10, jsxs as jsxs8 } from "react/jsx-runtime";
+import { Fragment as Fragment7, jsx as jsx10, jsxs as jsxs8 } from "react/jsx-runtime";
 function AgeConfirmationModal({
   isOpen,
   onConfirm,
@@ -871,7 +881,7 @@ function AgeConfirmationModal({
     }
   };
   if (!isOpen) {
-    return /* @__PURE__ */ jsx10(Fragment6, { children });
+    return /* @__PURE__ */ jsx10(Fragment7, { children });
   }
   return /* @__PURE__ */ jsxs8("div", { className: "relative overflow-hidden rounded-2xl", style: roundedClipStyle, children: [
     /* @__PURE__ */ jsx10("div", { className: "pointer-events-none opacity-20", children }),
@@ -928,7 +938,7 @@ function AgeConfirmationModal({
 }
 
 // src/landing-page-viewer.tsx
-import { Fragment as Fragment7, jsx as jsx11, jsxs as jsxs9 } from "react/jsx-runtime";
+import { Fragment as Fragment8, jsx as jsx11, jsxs as jsxs9 } from "react/jsx-runtime";
 var CONTENT_VERTICAL_OFFSET_KEY = "__content_vertical_offset";
 var MIN_CONTENT_VERTICAL_OFFSET = 0;
 var MAX_CONTENT_VERTICAL_OFFSET = 320;
@@ -1570,8 +1580,169 @@ function LandingPageViewer({
     return "h-[320px] md:h-[320px]";
   })();
   const heroHeightStyle = (isFullMode || isVideoMode) && settings.header_image_height ? { height: `${settings.header_image_height}px` } : void 0;
+  const voiceSection = /* @__PURE__ */ jsx11(Fragment8, { children: isSectionEnabled("voice_note") && settings.voice_note_url && /* @__PURE__ */ jsx11(
+    motion10.div,
+    {
+      initial: { opacity: 0, y: 10 },
+      animate: { opacity: 1, y: 0 },
+      transition: { delay: 0.45, duration: 0.3 },
+      className: `w-full max-w-sm ${getSectionSpacingClass(
+        "voice_note"
+      )}`,
+      style: { order: getSectionOrder("voice_note") },
+      children: /* @__PURE__ */ jsx11(
+        ModernAudioPlayer,
+        {
+          src: settings.voice_note_url,
+          theme: settings.theme_mode
+        }
+      )
+    }
+  ) });
+  const lightboxSection = /* @__PURE__ */ jsx11(Fragment8, { children: lightboxUrl && /* @__PURE__ */ jsx11(
+    "div",
+    {
+      className: "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80",
+      onClick: () => setLightboxUrl(null),
+      children: /* @__PURE__ */ jsxs9(
+        "div",
+        {
+          className: "max-w-3xl max-h-[90vh] px-4",
+          onClick: (e) => e.stopPropagation(),
+          children: [
+            /* @__PURE__ */ jsx11(
+              "img",
+              {
+                src: lightboxUrl,
+                alt: "Gallery full view",
+                className: "w-full h-full object-contain rounded-2xl"
+              }
+            ),
+            /* @__PURE__ */ jsx11("div", { className: "mt-3 flex justify-center", children: /* @__PURE__ */ jsx11(
+              "button",
+              {
+                type: "button",
+                className: "px-4 py-1.5 rounded-full bg-white/90 text-sm font-medium text-black hover:bg-white",
+                onClick: () => setLightboxUrl(null),
+                children: "Close"
+              }
+            ) })
+          ]
+        }
+      )
+    }
+  ) });
+  const gallerySection = /* @__PURE__ */ jsxs9(Fragment8, { children: [
+    isSectionEnabled("gallery") && hasGallery && /* @__PURE__ */ jsx11(
+      motion10.div,
+      {
+        initial: { opacity: 0, y: 10 },
+        animate: { opacity: 1, y: 0 },
+        transition: { delay: 0.7, duration: 0.3 },
+        className: `w-full ${getSectionSpacingClass("gallery")}`,
+        style: { order: getSectionOrder("gallery") },
+        children: (() => {
+          const total = galleryImages.length;
+          if (total === 0) return null;
+          const index = Math.min(activeGalleryIndex, total - 1);
+          const goPrev = () => {
+            if (total <= 1) return;
+            setActiveGalleryIndex(
+              (prev) => (prev - 1 + total) % total
+            );
+          };
+          const goNext = () => {
+            if (total <= 1) return;
+            setActiveGalleryIndex((prev) => (prev + 1) % total);
+          };
+          const handleTouchStart = (e) => {
+            galleryTouchStartX.current = e.touches[0].clientX;
+          };
+          const handleTouchEnd = (e) => {
+            if (galleryTouchStartX.current == null) return;
+            const deltaX = e.changedTouches[0].clientX - galleryTouchStartX.current;
+            const threshold = 40;
+            if (deltaX > threshold) {
+              goPrev();
+            } else if (deltaX < -threshold) {
+              goNext();
+            }
+            galleryTouchStartX.current = null;
+          };
+          return /* @__PURE__ */ jsxs9(Fragment8, { children: [
+            /* @__PURE__ */ jsx11(
+              "div",
+              {
+                className: "relative w-full flex items-center justify-center",
+                onTouchStart: handleTouchStart,
+                onTouchEnd: handleTouchEnd,
+                children: /* @__PURE__ */ jsx11("div", { className: "relative w-full max-w-md h-64 sm:h-72 overflow-visible flex items-center justify-center", children: (() => {
+                  const cards = [];
+                  for (let offset = -2; offset <= 2; offset++) {
+                    const imgIndex = (index + offset + total) % total;
+                    const url = galleryImages[imgIndex];
+                    const absOffset = Math.abs(offset);
+                    const isActive = offset === 0;
+                    const translateX = offset * 120;
+                    const scale = isActive ? 1 : 0.85;
+                    const opacity = isActive ? 1 : 0.35;
+                    const blur = isActive ? "none" : "blur(3px)";
+                    const zIndex = 20 - absOffset;
+                    cards.push(
+                      /* @__PURE__ */ jsx11(
+                        "div",
+                        {
+                          className: "absolute rounded-3xl overflow-hidden shadow-2xl bg-default-100 cursor-pointer transition-all duration-300 ease-out",
+                          style: {
+                            width: "13rem",
+                            height: "17rem",
+                            transform: `translateX(${translateX}%) scale(${scale})`,
+                            opacity,
+                            filter: blur,
+                            zIndex
+                          },
+                          onClick: () => {
+                            if (isActive) {
+                              setLightboxUrl(url);
+                            } else {
+                              setActiveGalleryIndex(imgIndex);
+                            }
+                          },
+                          children: /* @__PURE__ */ jsx11(
+                            "img",
+                            {
+                              src: url,
+                              alt: `Gallery ${imgIndex + 1}`,
+                              className: "w-full h-full object-cover",
+                              loading: "lazy"
+                            }
+                          )
+                        },
+                        `gallery-card-${offset}-${imgIndex}`
+                      )
+                    );
+                  }
+                  return cards;
+                })() })
+              }
+            ),
+            total > 1 && /* @__PURE__ */ jsx11("div", { className: "mt-5 flex justify-center gap-1.5", children: galleryImages.map((url, dotIndex) => /* @__PURE__ */ jsx11(
+              "button",
+              {
+                type: "button",
+                onClick: () => setActiveGalleryIndex(dotIndex),
+                className: `h-1.5 rounded-full transition-all ${dotIndex === index ? "w-4 bg-[#5EC8D6]" : "w-1.5 bg-[#5EC8D6]/40"}`
+              },
+              `${url}-${dotIndex}`
+            )) })
+          ] });
+        })()
+      }
+    ),
+    "  "
+  ] });
   if (["intro", "join"].includes(settings.__creator_journey_stage)) {
-    return /* @__PURE__ */ jsx11(
+    return /* @__PURE__ */ jsxs9(
       "div",
       {
         ref: viewerRootRef,
@@ -1580,16 +1751,20 @@ function LandingPageViewer({
         onDragStartCapture: preventContentSave,
         onDropCapture: preventContentSave,
         style: contentProtectionStyle,
-        children: /* @__PURE__ */ jsx11(
-          CreatorJourneyLayout,
-          {
-            settings,
-            pageFooter,
-            renderAction: (card, className) => isPreview ? /* @__PURE__ */ jsx11("button", { type: "button", className, onClick: () => onCtaActivate == null ? void 0 : onCtaActivate(card.url, () => {
-            }), children: card.title }) : /* @__PURE__ */ jsx11("a", { ...getNativeLinkProps(card.url, true), className, children: card.title }),
-            renderSocial: (social, className, icon) => isPreview ? /* @__PURE__ */ jsx11("a", { href: social.url, className, "aria-label": social.platform || "Social profile", onClick: (event) => event.preventDefault(), children: icon }) : /* @__PURE__ */ jsx11("a", { ...getNativeLinkProps(social.url), className, "aria-label": social.platform || "Social profile", children: icon })
-          }
-        )
+        children: [
+          /* @__PURE__ */ jsx11(
+            CreatorJourneyLayout,
+            {
+              settings,
+              pageFooter,
+              renderExtraSection: (key) => key === "voice_note" ? settings.voice_note_url ? voiceSection : null : hasGallery ? gallerySection : null,
+              renderAction: (card, className) => isPreview ? /* @__PURE__ */ jsx11("button", { type: "button", className, onClick: () => onCtaActivate == null ? void 0 : onCtaActivate(card.url, () => {
+              }), children: card.title }) : /* @__PURE__ */ jsx11("a", { ...getNativeLinkProps(card.url, true), className, children: card.title }),
+              renderSocial: (social, className, icon) => isPreview ? /* @__PURE__ */ jsx11("a", { href: social.url, className, "aria-label": social.platform || "Social profile", onClick: (event) => event.preventDefault(), children: icon }) : /* @__PURE__ */ jsx11("a", { ...getNativeLinkProps(social.url), className, "aria-label": social.platform || "Social profile", children: icon })
+            }
+          ),
+          isSectionEnabled("gallery") && lightboxSection
+        ]
       }
     );
   }
@@ -1741,7 +1916,7 @@ function LandingPageViewer({
                       let focusClass = "object-center";
                       if (focus === "top") focusClass = "object-top";
                       else if (focus === "bottom") focusClass = "object-bottom";
-                      return /* @__PURE__ */ jsxs9(Fragment7, { children: [
+                      return /* @__PURE__ */ jsxs9(Fragment8, { children: [
                         /* @__PURE__ */ jsxs9("div", { className: "relative w-full h-full overflow-hidden", children: [
                           heroPoster ? /* @__PURE__ */ jsx11(
                             "img",
@@ -1788,7 +1963,7 @@ function LandingPageViewer({
                         className: "w-16 h-16 text-default-300"
                       }
                     ) });
-                  })() : settings.avatar_url ? /* @__PURE__ */ jsxs9(Fragment7, { children: [
+                  })() : settings.avatar_url ? /* @__PURE__ */ jsxs9(Fragment8, { children: [
                     /* @__PURE__ */ jsx11("div", { className: "relative w-full h-full overflow-hidden", children: /* @__PURE__ */ jsx11(
                       "img",
                       {
@@ -1844,7 +2019,7 @@ function LandingPageViewer({
                                 children: settings.display_name || link.title || "Profile"
                               }
                             ),
-                            settings.verified_badge && /* @__PURE__ */ jsx11(Fragment7, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ jsx11(
+                            settings.verified_badge && /* @__PURE__ */ jsx11(Fragment8, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ jsx11(
                               Icon9,
                               {
                                 icon: "solar:verified-check-bold",
@@ -1967,7 +2142,7 @@ function LandingPageViewer({
                                 children: settings.display_name || link.title || "Profile"
                               }
                             ),
-                            settings.verified_badge && /* @__PURE__ */ jsx11(Fragment7, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ jsx11(
+                            settings.verified_badge && /* @__PURE__ */ jsx11(Fragment8, { children: settings.verified_badge_style === "solid" ? /* @__PURE__ */ jsx11(
                               Icon9,
                               {
                                 icon: "solar:verified-check-bold",
@@ -2093,58 +2268,8 @@ function LandingPageViewer({
                         ]
                       }
                     ),
-                    isSectionEnabled("voice_note") && settings.voice_note_url && /* @__PURE__ */ jsx11(
-                      motion10.div,
-                      {
-                        initial: { opacity: 0, y: 10 },
-                        animate: { opacity: 1, y: 0 },
-                        transition: { delay: 0.45, duration: 0.3 },
-                        className: `w-full max-w-sm ${getSectionSpacingClass(
-                          "voice_note"
-                        )}`,
-                        style: { order: getSectionOrder("voice_note") },
-                        children: /* @__PURE__ */ jsx11(
-                          ModernAudioPlayer,
-                          {
-                            src: settings.voice_note_url,
-                            theme: settings.theme_mode
-                          }
-                        )
-                      }
-                    ),
-                    lightboxUrl && /* @__PURE__ */ jsx11(
-                      "div",
-                      {
-                        className: "fixed inset-0 z-[9999] flex items-center justify-center bg-black/80",
-                        onClick: () => setLightboxUrl(null),
-                        children: /* @__PURE__ */ jsxs9(
-                          "div",
-                          {
-                            className: "max-w-3xl max-h-[90vh] px-4",
-                            onClick: (e) => e.stopPropagation(),
-                            children: [
-                              /* @__PURE__ */ jsx11(
-                                "img",
-                                {
-                                  src: lightboxUrl,
-                                  alt: "Gallery full view",
-                                  className: "w-full h-full object-contain rounded-2xl"
-                                }
-                              ),
-                              /* @__PURE__ */ jsx11("div", { className: "mt-3 flex justify-center", children: /* @__PURE__ */ jsx11(
-                                "button",
-                                {
-                                  type: "button",
-                                  className: "px-4 py-1.5 rounded-full bg-white/90 text-sm font-medium text-black hover:bg-white",
-                                  onClick: () => setLightboxUrl(null),
-                                  children: "Close"
-                                }
-                              ) })
-                            ]
-                          }
-                        )
-                      }
-                    ),
+                    voiceSection,
+                    lightboxSection,
                     isSectionEnabled("bio") && settings.bio && /* @__PURE__ */ jsx11(
                       motion10.p,
                       {
@@ -2282,7 +2407,7 @@ function LandingPageViewer({
                                 ...ctaRoundedClipStyle
                               },
                               children: [
-                                card.style.type === "image" && card.style.background_image && /* @__PURE__ */ jsxs9(Fragment7, { children: [
+                                card.style.type === "image" && card.style.background_image && /* @__PURE__ */ jsxs9(Fragment8, { children: [
                                   /* @__PURE__ */ jsx11(
                                     "img",
                                     {
@@ -2443,7 +2568,7 @@ function LandingPageViewer({
                                     }
                                   )
                                 ] }),
-                                isBrandedNonPremium && /* @__PURE__ */ jsx11(Fragment7, { children: card.style.logo_icon && /* @__PURE__ */ jsx11("div", { className: "absolute top-2 right-2 z-20", children: /* @__PURE__ */ jsx11(
+                                isBrandedNonPremium && /* @__PURE__ */ jsx11(Fragment8, { children: card.style.logo_icon && /* @__PURE__ */ jsx11("div", { className: "absolute top-2 right-2 z-20", children: /* @__PURE__ */ jsx11(
                                   "div",
                                   {
                                     className: "rounded-full px-2 py-2 flex items-center justify-center shadow-md",
@@ -2619,112 +2744,7 @@ function LandingPageViewer({
                         )
                       }
                     ),
-                    isSectionEnabled("gallery") && hasGallery && /* @__PURE__ */ jsx11(
-                      motion10.div,
-                      {
-                        initial: { opacity: 0, y: 10 },
-                        animate: { opacity: 1, y: 0 },
-                        transition: { delay: 0.7, duration: 0.3 },
-                        className: `w-full ${getSectionSpacingClass("gallery")}`,
-                        style: { order: getSectionOrder("gallery") },
-                        children: (() => {
-                          const total = galleryImages.length;
-                          if (total === 0) return null;
-                          const index = Math.min(activeGalleryIndex, total - 1);
-                          const goPrev = () => {
-                            if (total <= 1) return;
-                            setActiveGalleryIndex(
-                              (prev) => (prev - 1 + total) % total
-                            );
-                          };
-                          const goNext = () => {
-                            if (total <= 1) return;
-                            setActiveGalleryIndex((prev) => (prev + 1) % total);
-                          };
-                          const handleTouchStart = (e) => {
-                            galleryTouchStartX.current = e.touches[0].clientX;
-                          };
-                          const handleTouchEnd = (e) => {
-                            if (galleryTouchStartX.current == null) return;
-                            const deltaX = e.changedTouches[0].clientX - galleryTouchStartX.current;
-                            const threshold = 40;
-                            if (deltaX > threshold) {
-                              goPrev();
-                            } else if (deltaX < -threshold) {
-                              goNext();
-                            }
-                            galleryTouchStartX.current = null;
-                          };
-                          return /* @__PURE__ */ jsxs9(Fragment7, { children: [
-                            /* @__PURE__ */ jsx11(
-                              "div",
-                              {
-                                className: "relative w-full flex items-center justify-center",
-                                onTouchStart: handleTouchStart,
-                                onTouchEnd: handleTouchEnd,
-                                children: /* @__PURE__ */ jsx11("div", { className: "relative w-full max-w-md h-64 sm:h-72 overflow-visible flex items-center justify-center", children: (() => {
-                                  const cards = [];
-                                  for (let offset = -2; offset <= 2; offset++) {
-                                    const imgIndex = (index + offset + total) % total;
-                                    const url = galleryImages[imgIndex];
-                                    const absOffset = Math.abs(offset);
-                                    const isActive = offset === 0;
-                                    const translateX = offset * 120;
-                                    const scale = isActive ? 1 : 0.85;
-                                    const opacity = isActive ? 1 : 0.35;
-                                    const blur = isActive ? "none" : "blur(3px)";
-                                    const zIndex = 20 - absOffset;
-                                    cards.push(
-                                      /* @__PURE__ */ jsx11(
-                                        "div",
-                                        {
-                                          className: "absolute rounded-3xl overflow-hidden shadow-2xl bg-default-100 cursor-pointer transition-all duration-300 ease-out",
-                                          style: {
-                                            width: "13rem",
-                                            height: "17rem",
-                                            transform: `translateX(${translateX}%) scale(${scale})`,
-                                            opacity,
-                                            filter: blur,
-                                            zIndex
-                                          },
-                                          onClick: () => {
-                                            if (isActive) {
-                                              setLightboxUrl(url);
-                                            } else {
-                                              setActiveGalleryIndex(imgIndex);
-                                            }
-                                          },
-                                          children: /* @__PURE__ */ jsx11(
-                                            "img",
-                                            {
-                                              src: url,
-                                              alt: `Gallery ${imgIndex + 1}`,
-                                              className: "w-full h-full object-cover",
-                                              loading: "lazy"
-                                            }
-                                          )
-                                        },
-                                        `gallery-card-${offset}-${imgIndex}`
-                                      )
-                                    );
-                                  }
-                                  return cards;
-                                })() })
-                              }
-                            ),
-                            total > 1 && /* @__PURE__ */ jsx11("div", { className: "mt-5 flex justify-center gap-1.5", children: galleryImages.map((url, dotIndex) => /* @__PURE__ */ jsx11(
-                              "button",
-                              {
-                                type: "button",
-                                onClick: () => setActiveGalleryIndex(dotIndex),
-                                className: `h-1.5 rounded-full transition-all ${dotIndex === index ? "w-4 bg-[#5EC8D6]" : "w-1.5 bg-[#5EC8D6]/40"}`
-                              },
-                              `${url}-${dotIndex}`
-                            )) })
-                          ] });
-                        })()
-                      }
-                    )
+                    gallerySection
                   ] }) })
                 }
               ),
@@ -2741,7 +2761,7 @@ function LandingPageViewer({
 import { useEffect as useEffect6, useId, useRef as useRef3, useState as useState9 } from "react";
 
 // src/creator-privacy-policy.tsx
-import { Fragment as Fragment8, jsx as jsx12, jsxs as jsxs10 } from "react/jsx-runtime";
+import { Fragment as Fragment9, jsx as jsx12, jsxs as jsxs10 } from "react/jsx-runtime";
 function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }) {
   return /* @__PURE__ */ jsxs10("article", { className: "mx-auto max-w-3xl space-y-5 px-5 py-10 text-sm leading-7", children: [
     /* @__PURE__ */ jsxs10("h1", { className: "text-3xl font-semibold", children: [
@@ -2765,7 +2785,7 @@ function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }) {
       usesCloudflare ? ", plus a short-lived age-confirmation and security-verification record" : "",
       ". Browser settings let you clear or restrict this storage; doing so may affect functionality. Where age confirmation is shown, it asks you to declare that you are at least 18; it does not collect a date of birth or verify your identity."
     ] }),
-    usesCloudflare && /* @__PURE__ */ jsxs10(Fragment8, { children: [
+    usesCloudflare && /* @__PURE__ */ jsxs10(Fragment9, { children: [
       /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Security verification" }),
       /* @__PURE__ */ jsxs10("p", { children: [
         "Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See ",
@@ -2790,7 +2810,7 @@ function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }) {
 }
 
 // src/creator-page-flow.tsx
-import { Fragment as Fragment9, jsx as jsx13, jsxs as jsxs11 } from "react/jsx-runtime";
+import { Fragment as Fragment10, jsx as jsx13, jsxs as jsxs11 } from "react/jsx-runtime";
 var turnstileScript;
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve();
@@ -2951,25 +2971,17 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
     /* @__PURE__ */ jsx13("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: renderPage(
       isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : settings != null ? settings : {},
       activate,
-      /* @__PURE__ */ jsxs11("footer", { className: isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }, children: [
-        (!isTwoPage || currentStage === "intro") && /* @__PURE__ */ jsx13("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
-          event.preventDefault();
-          setPrivacy(true);
-        } : void 0, children: "Privacy Policy" }),
-        /* @__PURE__ */ jsxs11("p", { className: "mt-3", children: [
-          "\xA9 ",
-          (/* @__PURE__ */ new Date()).getFullYear(),
-          " ",
-          creatorName
-        ] })
-      ] })
+      !isTwoPage || currentStage === "intro" ? /* @__PURE__ */ jsx13("footer", { className: isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }, children: /* @__PURE__ */ jsx13("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
+        event.preventDefault();
+        setPrivacy(true);
+      } : void 0, children: "Privacy Policy" }) }) : null
     ) }),
     isTwoPage && previewComplete && /* @__PURE__ */ jsx13("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
-    activeDialog && /* @__PURE__ */ jsx13("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, style: !privacy ? { background: "rgba(0,0,0,.72)", backdropFilter: "blur(6px)" } : void 0, children: /* @__PURE__ */ jsx13("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", style: !privacy ? { maxWidth: "320px", background: "#141414", borderColor: "#262626", padding: "22px 18px 18px" } : void 0, children: privacy ? /* @__PURE__ */ jsxs11(Fragment9, { children: [
+    activeDialog && /* @__PURE__ */ jsx13("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, style: !privacy ? { background: "rgba(0,0,0,.72)", backdropFilter: "blur(6px)" } : void 0, children: /* @__PURE__ */ jsx13("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", style: !privacy ? { maxWidth: "320px", background: "#141414", borderColor: "#262626", padding: "22px 18px 18px" } : void 0, children: privacy ? /* @__PURE__ */ jsxs11(Fragment10, { children: [
       /* @__PURE__ */ jsx13("h2", { id: titleId, className: "sr-only", children: "Privacy Policy" }),
       /* @__PURE__ */ jsx13("button", { type: "button", className: "rounded-full border border-white/30 px-5 py-2", onClick: () => setPrivacy(false), children: "Close" }),
       /* @__PURE__ */ jsx13("div", { className: "text-left", children: /* @__PURE__ */ jsx13(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0, usesCloudflare: isTwoPage }) })
-    ] }) : /* @__PURE__ */ jsxs11(Fragment9, { children: [
+    ] }) : /* @__PURE__ */ jsxs11(Fragment10, { children: [
       /* @__PURE__ */ jsx13("h2", { id: titleId, className: "font-semibold", style: { fontSize: "19px", lineHeight: "1.5", margin: "0 0 6px" }, children: "Are you over 18?" }),
       /* @__PURE__ */ jsx13("p", { className: "text-white/70", style: { fontSize: "13px", lineHeight: "1.5", margin: 0 }, children: "This link contains content for adults only. Please confirm you are 18 or older to continue." }),
       isPreview ? /* @__PURE__ */ jsx13("div", { className: "my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70", children: "Cloudflare verification appears here on the live page. Preview only." }) : turnstileSiteKey ? /* @__PURE__ */ jsx13(TurnstileCheck, { siteKey: turnstileSiteKey, onToken: (value) => {

@@ -101,10 +101,9 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
     {isPreview && isTwoPage && <nav aria-label="Creator flow preview" className="flex justify-center gap-2 bg-black p-3 text-xs text-white"><button type="button" onClick={() => { setPreviewStage("intro"); setPending(null); setPreviewComplete(false); }}>First page</button><span aria-hidden="true">→</span><button type="button" onClick={() => { setPreviewStage("join"); setPending(null); setPreviewComplete(false); }}>Second page</button></nav>}
     <div aria-hidden={activeDialog || undefined} inert={activeDialog ? true : undefined}>
       {renderPage(isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : (settings ?? {}), activate,
-        <footer className={isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm"} style={{ color: settings?.theme_mode === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }}>
-          {(!isTwoPage || currentStage === "intro") && <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>}
-          <p className="mt-3">© {new Date().getFullYear()} {creatorName}</p>
-        </footer>
+        (!isTwoPage || currentStage === "intro") ? <footer className={isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm"} style={{ color: settings?.theme_mode === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }}>
+          <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>
+        </footer> : null
       )}
     </div>
     {isTwoPage && previewComplete && <p role="status" className="bg-black p-3 text-center text-sm text-white">Preview complete. The live page continues through the existing tracked link.</p>}

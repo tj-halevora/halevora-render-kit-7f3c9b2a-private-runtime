@@ -7,13 +7,16 @@ import type { CreatorPageStage } from "./creator-page-flow-model";
 /** The same photo-card presentation is used by the public page and editor preview.
  * Navigation stays with the host renderer, including its existing tracked links.
  */
-export function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial }: {
+export function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial, renderExtraSection }: {
   settings: any;
   pageFooter?: React.ReactNode;
   renderAction: (card: any, className: string) => React.ReactNode;
   renderSocial: (social: any, className: string, icon: React.ReactNode) => React.ReactNode;
+  renderExtraSection?: (key: "voice_note" | "gallery") => React.ReactNode;
 }) {
   const stage: CreatorPageStage = settings.__creator_journey_stage;
+  const sections = Array.isArray(settings.layout_sections) ? settings.layout_sections : ["header", "bio", "social_block", "voice_note", "cta_block", "gallery"];
+  const enabled = (key: string) => sections.includes(key);
   const usesVideoCover = ["video", "video_background"].includes(settings.profile_display_mode) ||
     (settings.profile_display_mode === "avatar" && settings.section_spacing?.__profile_video_background);
   const photo = usesVideoCover
@@ -43,26 +46,31 @@ export function CreatorJourneyLayout({ settings, pageFooter, renderAction, rende
       .hvj-button:focus-visible,.hvj-social:focus-visible{outline:2px solid #fff;outline-offset:4px}
       .hvj-socials{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:18px}
       .hvj-social{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:999px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;text-decoration:none}
-      .hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:1.5;color:rgba(255,255,255,.72);margin:14px 0 0}
+      .hvj-extra{width:100%;max-width:360px;overflow:hidden}.hvj-sub{width:100%;max-width:360px;text-align:center;font-size:13px;line-height:1.5;color:rgba(255,255,255,.72);margin:14px 0 0}
       .hvj-footer{margin-top:26px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.6);text-align:center}
       .hvj-footer a{color:rgba(255,255,255,.75);text-decoration:none}.hvj-footer p{margin:0}
     `}</style>
     <div className="hvj-photo">
-      {photo && <img src={photo} alt={settings.display_name || "Creator"} loading="eager" decoding="async" style={{ objectPosition: settings.header_video_focus || "center" }} />}
+      {photo && <img src={photo} alt={enabled("header") ? settings.display_name || "Creator" : "Creator photo"} loading="eager" decoding="async" style={{ objectPosition: settings.header_video_focus || "center" }} />}
       <div className="hvj-shade" />
       <div className="hvj-identity">
-        <h1 className="hvj-name">{settings.display_name}{stage === "join" && settings.verified_badge && <svg aria-label="Verified" role="img" width="18" height="18" viewBox="0 0 24 24"><path fill="#1d9bf0" d="m12 1 2.9 2.1 3.6.2 1.3 3.4 2.8 2.3-.9 3.5.9 3.5-2.8 2.3-1.3 3.4-3.6.2L12 23l-2.9-2.1-3.6-.2-1.3-3.4L1.4 15l.9-3.5-.9-3.5 2.8-2.3 1.3-3.4 3.6-.2Z"/><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m7 12 3 3 7-7"/></svg>}</h1>
-        {handle && settings.section_spacing?.__creator_show_handle === true && <p className="hvj-handle">{handle}</p>}
-        {stage === "intro" && settings.bio && <p className="hvj-tag">{settings.bio}</p>}
+        {enabled("header") && <><h1 className="hvj-name">{settings.display_name}{stage === "join" && settings.verified_badge && <svg aria-label="Verified" role="img" width="18" height="18" viewBox="0 0 24 24"><path fill="#1d9bf0" d="m12 1 2.9 2.1 3.6.2 1.3 3.4 2.8 2.3-.9 3.5.9 3.5-2.8 2.3-1.3 3.4-3.6.2L12 23l-2.9-2.1-3.6-.2-1.3-3.4L1.4 15l.9-3.5-.9-3.5 2.8-2.3 1.3-3.4 3.6-.2Z"/><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m7 12 3 3 7-7"/></svg>}</h1>
+        {handle && settings.section_spacing?.__creator_show_handle === true && <p className="hvj-handle">{handle}</p>}</>}
+        {stage === "intro" && enabled("bio") && settings.bio && <p className="hvj-tag">{settings.bio}</p>}
       </div>
     </div>
-    {stage === "join" && settings.__creator_join_description && <p className="hvj-sub">{settings.__creator_join_description}</p>}
-    {[...(settings.cta_cards || [])].sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((card: any) => <React.Fragment key={card.id}>{renderAction(card, "hvj-button")}</React.Fragment>)}
-    {stage === "intro" && socials.length > 0 && <nav className="hvj-socials" aria-label="Socials">{socials.map((social: any, index: number) => {
+    {stage === "join" && enabled("bio") && settings.__creator_join_description && <p className="hvj-sub">{settings.__creator_join_description}</p>}
+    {enabled("cta_block") && [...(settings.cta_cards || [])].sort((a: any, b: any) => (a.order || 0) - (b.order || 0)).map((card: any) => <React.Fragment key={card.id}>{renderAction(card, "hvj-button")}</React.Fragment>)}
+    {stage === "intro" && enabled("social_block") && socials.length > 0 && <nav className="hvj-socials" aria-label="Socials">{socials.map((social: any, index: number) => {
       const platform = String(social.platform || "").toLowerCase();
       const icon = /instagram/.test(platform) ? "mdi:instagram" : /snapchat/.test(platform) ? "ri:snapchat-fill" : /tiktok/.test(platform) ? "ic:baseline-tiktok" : social.icon || "mdi:link";
       return <React.Fragment key={social.id || index}>{renderSocial(social, "hvj-social", <Icon icon={icon} width={22} height={22} />)}</React.Fragment>;
     })}</nav>}
+    {stage === "intro" && enabled("social_block") && settings.show_follower_count && Number(settings.follower_count) > 0 && <p className="hvj-sub" data-creator-section="followers">{Number(settings.follower_count).toLocaleString()} followers</p>}
+    {(["voice_note", "gallery"] as const).map(key => {
+      const content = enabled(key) && renderExtraSection ? renderExtraSection(key) : null;
+      return content ? <div key={key} className="hvj-extra" data-creator-section={key}>{content}</div> : null;
+    })}
     {pageFooter}
   </div>;
 }

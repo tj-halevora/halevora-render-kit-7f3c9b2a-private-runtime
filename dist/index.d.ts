@@ -214,11 +214,12 @@ declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage
 /** The same photo-card presentation is used by the public page and editor preview.
  * Navigation stays with the host renderer, including its existing tracked links.
  */
-declare function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial }: {
+declare function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial, renderExtraSection }: {
     settings: any;
     pageFooter?: React.ReactNode;
     renderAction: (card: any, className: string) => React.ReactNode;
     renderSocial: (social: any, className: string, icon: React.ReactNode) => React.ReactNode;
+    renderExtraSection?: (key: "voice_note" | "gallery") => React.ReactNode;
 }): react_jsx_runtime.JSX.Element;
 
 /** Deliberately describes implemented behavior; no invented legal entity or retention promise. */
