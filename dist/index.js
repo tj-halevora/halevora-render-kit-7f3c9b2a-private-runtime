@@ -119,7 +119,7 @@ var import_react = __toESM(require("react"));
 var import_react2 = require("@iconify/react");
 var import_jsx_runtime = require("react/jsx-runtime");
 function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial }) {
-  var _a;
+  var _a, _b;
   const stage = settings.__creator_journey_stage;
   const usesVideoCover = ["video", "video_background"].includes(settings.profile_display_mode) || settings.profile_display_mode === "avatar" && ((_a = settings.section_spacing) == null ? void 0 : _a.__profile_video_background);
   const photo = usesVideoCover ? settings.header_video_poster_url || settings.avatar_url : settings.avatar_url || settings.header_video_poster_url;
@@ -163,7 +163,7 @@ function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { fill: "none", stroke: "#fff", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", d: "m7 12 3 3 7-7" })
           ] })
         ] }),
-        handle && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-handle", children: handle }),
+        handle && ((_b = settings.section_spacing) == null ? void 0 : _b.__creator_hide_handle) !== true && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-handle", children: handle }),
         stage === "intro" && settings.bio && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-tag", children: settings.bio })
       ] })
     ] }),
