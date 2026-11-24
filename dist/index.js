@@ -163,7 +163,7 @@ function CreatorJourneyLayout({ settings, pageFooter, renderAction, renderSocial
             /* @__PURE__ */ (0, import_jsx_runtime.jsx)("path", { fill: "none", stroke: "#fff", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", d: "m7 12 3 3 7-7" })
           ] })
         ] }),
-        handle && ((_b = settings.section_spacing) == null ? void 0 : _b.__creator_hide_handle) !== true && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-handle", children: handle }),
+        handle && ((_b = settings.section_spacing) == null ? void 0 : _b.__creator_show_handle) === true && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-handle", children: handle }),
         stage === "intro" && settings.bio && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", { className: "hvj-tag", children: settings.bio })
       ] })
     ] }),

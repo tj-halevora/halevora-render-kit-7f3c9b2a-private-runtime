@@ -52,7 +52,7 @@ export function CreatorJourneyLayout({ settings, pageFooter, renderAction, rende
       <div className="hvj-shade" />
       <div className="hvj-identity">
         <h1 className="hvj-name">{settings.display_name}{stage === "join" && settings.verified_badge && <svg aria-label="Verified" role="img" width="18" height="18" viewBox="0 0 24 24"><path fill="#1d9bf0" d="m12 1 2.9 2.1 3.6.2 1.3 3.4 2.8 2.3-.9 3.5.9 3.5-2.8 2.3-1.3 3.4-3.6.2L12 23l-2.9-2.1-3.6-.2-1.3-3.4L1.4 15l.9-3.5-.9-3.5 2.8-2.3 1.3-3.4 3.6-.2Z"/><path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m7 12 3 3 7-7"/></svg>}</h1>
-        {handle && settings.section_spacing?.__creator_hide_handle !== true && <p className="hvj-handle">{handle}</p>}
+        {handle && settings.section_spacing?.__creator_show_handle === true && <p className="hvj-handle">{handle}</p>}
         {stage === "intro" && settings.bio && <p className="hvj-tag">{settings.bio}</p>}
       </div>
     </div>
