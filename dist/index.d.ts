@@ -202,6 +202,7 @@ type CreatorPageFlowProps = {
     isPreview?: boolean;
     joinHref: string;
     privacyHref: string;
+    privacyPolicyTemplate?: string | null;
     turnstileSiteKey?: string;
     twoPageEnabled?: boolean;
     verify?: (token: string, target: string) => Promise<void>;
@@ -209,7 +210,7 @@ type CreatorPageFlowProps = {
         track?: boolean;
     }) => void) => boolean, footer: React.ReactNode) => React.ReactNode;
 };
-declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage, isPreview, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled, verify, renderPage }: CreatorPageFlowProps): react_jsx_runtime.JSX.Element;
+declare function CreatorPageFlow({ link, settings, creatorName: ownerName, stage, isPreview, joinHref, privacyHref, privacyPolicyTemplate, turnstileSiteKey, twoPageEnabled, verify, renderPage }: CreatorPageFlowProps): react_jsx_runtime.JSX.Element;
 
 /** The same photo-card presentation is used by the public page and editor preview.
  * Navigation stays with the host renderer, including its existing tracked links.
@@ -222,11 +223,16 @@ declare function CreatorJourneyLayout({ settings, pageFooter, renderAction, rend
     renderExtraSection?: (key: "voice_note" | "gallery") => React.ReactNode;
 }): react_jsx_runtime.JSX.Element;
 
-/** Deliberately describes implemented behavior; no invented legal entity or retention promise. */
-declare function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare }: {
+declare const MAX_CREATOR_PRIVACY_POLICY_LENGTH = 20000;
+/** Always resolve the current default at read time; do not copy it to every link. */
+declare function defaultCreatorPrivacyTemplate(usesCloudflare?: boolean): string;
+declare function creatorPrivacyPolicyText(template: string | null | undefined, creatorName: string, domain?: string, usesCloudflare?: boolean): string;
+/** Plain text and safe links only; saved policy text never becomes raw HTML. */
+declare function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare, template }: {
     creatorName: string;
     domain?: string;
     usesCloudflare?: boolean;
+    template?: string | null;
 }): react_jsx_runtime.JSX.Element;
 
-export { AgeConfirmationModal, type AgeConfirmationModalProps, type CTACard, type CTACardStyle, CTACardWithMechanisms, CreatorJourneyLayout, CreatorPageFlow, type CreatorPageFlowProps, type CreatorPageStage, CreatorPrivacyPolicy, type LandingPageSettings, LandingPageViewer, type LayoutSectionKey, type Link, ModernAudioPlayer, type SectionSpacing, type SocialLink, appendCreatorJourneySearch, creatorDisplayName, creatorJourneySettings, creatorUsesTwoPageFlow };
+export { AgeConfirmationModal, type AgeConfirmationModalProps, type CTACard, type CTACardStyle, CTACardWithMechanisms, CreatorJourneyLayout, CreatorPageFlow, type CreatorPageFlowProps, type CreatorPageStage, CreatorPrivacyPolicy, type LandingPageSettings, LandingPageViewer, type LayoutSectionKey, type Link, MAX_CREATOR_PRIVACY_POLICY_LENGTH, ModernAudioPlayer, type SectionSpacing, type SocialLink, appendCreatorJourneySearch, creatorDisplayName, creatorJourneySettings, creatorPrivacyPolicyText, creatorUsesTwoPageFlow, defaultCreatorPrivacyTemplate };
