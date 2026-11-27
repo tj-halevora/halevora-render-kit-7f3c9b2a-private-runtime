@@ -40,12 +40,12 @@ function TurnstileCheck({ siteKey, onToken, onError }: { siteKey: string; onToke
 
 export type CreatorPageFlowProps = {
   link: any; settings: any; creatorName?: string; stage?: CreatorPageStage; isPreview?: boolean;
-  joinHref: string; privacyHref: string; turnstileSiteKey?: string; twoPageEnabled?: boolean;
+  joinHref: string; privacyHref: string; privacyPolicyTemplate?: string | null; turnstileSiteKey?: string; twoPageEnabled?: boolean;
   verify?: (token: string, target: string) => Promise<void>;
   renderPage: (settings: any, activate: (url: string, proceed: (options?: { track?: boolean }) => void) => boolean, footer: React.ReactNode) => React.ReactNode;
 };
 
-export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }: CreatorPageFlowProps) {
+export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, privacyPolicyTemplate, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }: CreatorPageFlowProps) {
   const [previewStage, setPreviewStage] = useState<CreatorPageStage>(stage);
   const [pending, setPending] = useState<{ target: string; proceed: (options?: { track?: boolean }) => void } | null>(null);
   const [privacy, setPrivacy] = useState(false);
@@ -101,15 +101,15 @@ export function CreatorPageFlow({ link, settings, creatorName: ownerName, stage 
     {isPreview && isTwoPage && <nav aria-label="Creator flow preview" className="flex justify-center gap-2 bg-black p-3 text-xs text-white"><button type="button" onClick={() => { setPreviewStage("intro"); setPending(null); setPreviewComplete(false); }}>First page</button><span aria-hidden="true">→</span><button type="button" onClick={() => { setPreviewStage("join"); setPending(null); setPreviewComplete(false); }}>Second page</button></nav>}
     <div aria-hidden={activeDialog || undefined} inert={activeDialog ? true : undefined}>
       {renderPage(isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : (settings ?? {}), activate,
-        (!isTwoPage || currentStage === "intro") ? <footer className={isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm"} style={{ color: settings?.theme_mode === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }}>
+        <footer className={isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm"} style={{ color: settings?.theme_mode === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }}>
           <a className="underline underline-offset-4" href={privacyHref} onClick={isPreview ? (event) => { event.preventDefault(); setPrivacy(true); } : undefined}>Privacy Policy</a>
-        </footer> : null
+        </footer>
       )}
     </div>
     {isTwoPage && previewComplete && <p role="status" className="bg-black p-3 text-center text-sm text-white">Preview complete. The live page continues through the existing tracked link.</p>}
     {activeDialog && <div className={`${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`} style={!privacy ? { background: "rgba(0,0,0,.72)", backdropFilter: "blur(6px)" } : undefined}>
       <div ref={modal} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className="my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl" style={!privacy ? { maxWidth: "320px", background: "#141414", borderColor: "#262626", padding: "22px 18px 18px" } : undefined}>
-        {privacy ? <><h2 id={titleId} className="sr-only">Privacy Policy</h2><button type="button" className="rounded-full border border-white/30 px-5 py-2" onClick={() => setPrivacy(false)}>Close</button><div className="text-left"><CreatorPrivacyPolicy creatorName={creatorName} domain={link?.domain || undefined} usesCloudflare={isTwoPage} /></div></> : <>
+        {privacy ? <><h2 id={titleId} className="sr-only">Privacy Policy</h2><button type="button" className="rounded-full border border-white/30 px-5 py-2" onClick={() => setPrivacy(false)}>Close</button><div className="text-left"><CreatorPrivacyPolicy template={privacyPolicyTemplate} creatorName={creatorName} domain={link?.domain || undefined} usesCloudflare={isTwoPage} /></div></> : <>
           <h2 id={titleId} className="font-semibold" style={{ fontSize: "19px", lineHeight: "1.5", margin: "0 0 6px" }}>Are you over 18?</h2>
           <p className="text-white/70" style={{ fontSize: "13px", lineHeight: "1.5", margin: 0 }}>This link contains content for adults only. Please confirm you are 18 or older to continue.</p>
           {isPreview ? <div className="my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70">Cloudflare verification appears here on the live page. Preview only.</div> : turnstileSiteKey ? <TurnstileCheck key={attempt} siteKey={turnstileSiteKey} onToken={(value) => { setToken(value); if (value) setError(""); }} onError={setError} /> : <p role="alert" className="my-4 text-sm">Verification is temporarily unavailable. Please try again later.</p>}

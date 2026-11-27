@@ -2761,8 +2761,49 @@ function LandingPageViewer({
 import { useEffect as useEffect6, useId, useRef as useRef3, useState as useState9 } from "react";
 
 // src/creator-privacy-policy.tsx
-import { Fragment as Fragment9, jsx as jsx12, jsxs as jsxs10 } from "react/jsx-runtime";
-function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }) {
+import { jsx as jsx12, jsxs as jsxs10 } from "react/jsx-runtime";
+var MAX_CREATOR_PRIVACY_POLICY_LENGTH = 2e4;
+function defaultCreatorPrivacyTemplate(usesCloudflare = true) {
+  return [
+    "This policy explains how information is used when you visit {{creator_name}}'s creator page and follow its links.",
+    "## Information collected",
+    "The website processes your IP address, browser and device information, referring page, approximate location derived from your IP address, page visits, link clicks, and campaign or external click identifiers included in the URL. These help operate the page, understand traffic and measure link performance.",
+    "## Cookies and browser storage",
+    "First-party cookies and browser storage are used for visitor and session identifiers and consistent page variants" + (usesCloudflare ? ", plus a short-lived age-confirmation and security-verification record" : "") + ". Browser settings let you clear or restrict this storage; doing so may affect functionality. Where age confirmation is shown, it asks you to declare that you are at least 18; it does not collect a date of birth or verify your identity.",
+    ...usesCloudflare ? ["## Security verification"] : [],
+    ...usesCloudflare ? ["Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/)."] : [],
+    "## Hosting, analytics and destination services",
+    "Technical service providers process information needed for hosting, media delivery, security and analytics. Where a link uses a tracking service, that service may receive campaign identifiers and connect a visit with later subscriptions or purchases on the destination service. Connected tracking integrations may report attributed events to configured advertising or analytics services. Processing can take place in other countries.",
+    "External social profiles and destination websites have their own privacy policies and terms. This policy covers this creator page, rather than those external services. Following an external link shares information needed to open and, where configured, attribute that visit.",
+    "## Purposes and retention",
+    "Information is used to provide and secure the website, maintain the requested link journey, investigate errors and measure traffic and conversions. It is retained for these operational, reporting and legal purposes, subject to the relevant provider's settings and applicable law. This website does not ask you to enter payment details on the creator page.",
+    "## Your choices and privacy requests",
+    "Where applicable law gives you rights to access, correct, delete or restrict use of your personal information, you can contact {{creator_name}} through a social profile linked from this page. Identify the website and your request; do not send passwords or payment details. Your browser settings and the destination service's privacy controls provide additional choices.",
+    "## Changes to this policy",
+    "This policy may be updated when the website's operation changes. The version published on this website applies to its current operation."
+  ].join("\n\n");
+}
+function creatorPrivacyPolicyText(template, creatorName, domain = "", usesCloudflare = true) {
+  const source = typeof template === "string" && template.trim() && template.length <= MAX_CREATOR_PRIVACY_POLICY_LENGTH ? template.trim() : defaultCreatorPrivacyTemplate(usesCloudflare);
+  return source.replace(
+    /\{\{\s*(creator_name|domain)\s*\}\}/g,
+    (_, key) => key === "creator_name" ? creatorName : domain
+  );
+}
+function policyInline(text) {
+  const nodes = [];
+  const pattern = /\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g;
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    nodes.push(text.slice(last, match.index));
+    nodes.push(/* @__PURE__ */ jsx12("a", { className: "underline", href: match[2], target: "_blank", rel: "noopener noreferrer", children: match[1] }, match.index));
+    last = match.index + match[0].length;
+  }
+  nodes.push(text.slice(last));
+  return nodes;
+}
+function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true, template }) {
+  const text = creatorPrivacyPolicyText(template, creatorName, domain, usesCloudflare);
   return /* @__PURE__ */ jsxs10("article", { className: "mx-auto max-w-3xl space-y-5 px-5 py-10 text-sm leading-7", children: [
     /* @__PURE__ */ jsxs10("h1", { className: "text-3xl font-semibold", children: [
       "Privacy Policy \u2014 ",
@@ -2772,45 +2813,12 @@ function CreatorPrivacyPolicy({ creatorName, domain, usesCloudflare = true }) {
       "Website: ",
       domain
     ] }),
-    /* @__PURE__ */ jsxs10("p", { children: [
-      "This policy explains how information is used when you visit ",
-      creatorName,
-      "'s creator page and follow its links."
-    ] }),
-    /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Information collected" }),
-    /* @__PURE__ */ jsx12("p", { children: "The website processes your IP address, browser and device information, referring page, approximate location derived from your IP address, page visits, link clicks, and campaign or external click identifiers included in the URL. These help operate the page, understand traffic and measure link performance." }),
-    /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Cookies and browser storage" }),
-    /* @__PURE__ */ jsxs10("p", { children: [
-      "First-party cookies and browser storage are used for visitor and session identifiers and consistent page variants",
-      usesCloudflare ? ", plus a short-lived age-confirmation and security-verification record" : "",
-      ". Browser settings let you clear or restrict this storage; doing so may affect functionality. Where age confirmation is shown, it asks you to declare that you are at least 18; it does not collect a date of birth or verify your identity."
-    ] }),
-    usesCloudflare && /* @__PURE__ */ jsxs10(Fragment9, { children: [
-      /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Security verification" }),
-      /* @__PURE__ */ jsxs10("p", { children: [
-        "Cloudflare Turnstile is used on the age-confirmation step to help detect automated requests. Cloudflare processes browser and network information for this check. See ",
-        /* @__PURE__ */ jsx12("a", { className: "underline", href: "https://www.cloudflare.com/privacypolicy/", target: "_blank", rel: "noopener noreferrer", children: "Cloudflare's Privacy Policy" }),
-        "."
-      ] })
-    ] }),
-    /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Hosting, analytics and destination services" }),
-    /* @__PURE__ */ jsx12("p", { children: "Technical service providers process information needed for hosting, media delivery, security and analytics. Where a link uses a tracking service, that service may receive campaign identifiers and connect a visit with later subscriptions or purchases on the destination service. Connected tracking integrations may report attributed events to configured advertising or analytics services. Processing can take place in other countries." }),
-    /* @__PURE__ */ jsx12("p", { children: "External social profiles and destination websites have their own privacy policies and terms. This policy covers this creator page, rather than those external services. Following an external link shares information needed to open and, where configured, attribute that visit." }),
-    /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Purposes and retention" }),
-    /* @__PURE__ */ jsx12("p", { children: "Information is used to provide and secure the website, maintain the requested link journey, investigate errors and measure traffic and conversions. It is retained for these operational, reporting and legal purposes, subject to the relevant provider's settings and applicable law. This website does not ask you to enter payment details on the creator page." }),
-    /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Your choices and privacy requests" }),
-    /* @__PURE__ */ jsxs10("p", { children: [
-      "Where applicable law gives you rights to access, correct, delete or restrict use of your personal information, you can contact ",
-      creatorName,
-      " through a social profile linked from this page. Identify the website and your request; do not send passwords or payment details. Your browser settings and the destination service's privacy controls provide additional choices."
-    ] }),
-    /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: "Changes to this policy" }),
-    /* @__PURE__ */ jsx12("p", { children: "This policy may be updated when the website's operation changes. The version published on this website applies to its current operation." })
+    text.split(/\n\s*\n/).map((block, index) => /^#{1,3} /.test(block) ? /* @__PURE__ */ jsx12("h2", { className: "text-xl font-semibold", children: block.replace(/^#{1,3} /, "") }, index) : /* @__PURE__ */ jsx12("p", { style: { whiteSpace: "pre-line", overflowWrap: "anywhere" }, children: policyInline(block) }, index))
   ] });
 }
 
 // src/creator-page-flow.tsx
-import { Fragment as Fragment10, jsx as jsx13, jsxs as jsxs11 } from "react/jsx-runtime";
+import { Fragment as Fragment9, jsx as jsx13, jsxs as jsxs11 } from "react/jsx-runtime";
 var turnstileScript;
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve();
@@ -2870,7 +2878,7 @@ function TurnstileCheck({ siteKey, onToken, onError }) {
   }, [siteKey]);
   return /* @__PURE__ */ jsx13("div", { ref: container, className: "min-h-[65px] w-full", style: { margin: "14px 0 10px", display: "flex", alignItems: "center", justifyContent: "center" } });
 }
-function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }) {
+function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intro", isPreview = false, joinHref, privacyHref, privacyPolicyTemplate, turnstileSiteKey, twoPageEnabled = true, verify, renderPage }) {
   const [previewStage, setPreviewStage] = useState9(stage);
   const [pending, setPending] = useState9(null);
   const [privacy, setPrivacy] = useState9(false);
@@ -2971,17 +2979,17 @@ function CreatorPageFlow({ link, settings, creatorName: ownerName, stage = "intr
     /* @__PURE__ */ jsx13("div", { "aria-hidden": activeDialog || void 0, inert: activeDialog ? true : void 0, children: renderPage(
       isTwoPage ? creatorJourneySettings(settings, link, currentStage, joinHref) : settings != null ? settings : {},
       activate,
-      !isTwoPage || currentStage === "intro" ? /* @__PURE__ */ jsx13("footer", { className: isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }, children: /* @__PURE__ */ jsx13("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
+      /* @__PURE__ */ jsx13("footer", { className: isTwoPage ? "hvj-footer" : "relative z-10 mt-auto shrink-0 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4 text-center text-sm", style: { color: (settings == null ? void 0 : settings.theme_mode) === "light" && !isTwoPage ? "#71717a" : "rgba(255,255,255,0.6)" }, children: /* @__PURE__ */ jsx13("a", { className: "underline underline-offset-4", href: privacyHref, onClick: isPreview ? (event) => {
         event.preventDefault();
         setPrivacy(true);
-      } : void 0, children: "Privacy Policy" }) }) : null
+      } : void 0, children: "Privacy Policy" }) })
     ) }),
     isTwoPage && previewComplete && /* @__PURE__ */ jsx13("p", { role: "status", className: "bg-black p-3 text-center text-sm text-white", children: "Preview complete. The live page continues through the existing tracked link." }),
-    activeDialog && /* @__PURE__ */ jsx13("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, style: !privacy ? { background: "rgba(0,0,0,.72)", backdropFilter: "blur(6px)" } : void 0, children: /* @__PURE__ */ jsx13("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", style: !privacy ? { maxWidth: "320px", background: "#141414", borderColor: "#262626", padding: "22px 18px 18px" } : void 0, children: privacy ? /* @__PURE__ */ jsxs11(Fragment10, { children: [
+    activeDialog && /* @__PURE__ */ jsx13("div", { className: `${isPreview ? "absolute" : "fixed"} inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm`, style: !privacy ? { background: "rgba(0,0,0,.72)", backdropFilter: "blur(6px)" } : void 0, children: /* @__PURE__ */ jsx13("div", { ref: modal, tabIndex: -1, role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, className: "my-auto w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/15 bg-[#121214] p-5 text-center text-white shadow-2xl", style: !privacy ? { maxWidth: "320px", background: "#141414", borderColor: "#262626", padding: "22px 18px 18px" } : void 0, children: privacy ? /* @__PURE__ */ jsxs11(Fragment9, { children: [
       /* @__PURE__ */ jsx13("h2", { id: titleId, className: "sr-only", children: "Privacy Policy" }),
       /* @__PURE__ */ jsx13("button", { type: "button", className: "rounded-full border border-white/30 px-5 py-2", onClick: () => setPrivacy(false), children: "Close" }),
-      /* @__PURE__ */ jsx13("div", { className: "text-left", children: /* @__PURE__ */ jsx13(CreatorPrivacyPolicy, { creatorName, domain: (link == null ? void 0 : link.domain) || void 0, usesCloudflare: isTwoPage }) })
-    ] }) : /* @__PURE__ */ jsxs11(Fragment10, { children: [
+      /* @__PURE__ */ jsx13("div", { className: "text-left", children: /* @__PURE__ */ jsx13(CreatorPrivacyPolicy, { template: privacyPolicyTemplate, creatorName, domain: (link == null ? void 0 : link.domain) || void 0, usesCloudflare: isTwoPage }) })
+    ] }) : /* @__PURE__ */ jsxs11(Fragment9, { children: [
       /* @__PURE__ */ jsx13("h2", { id: titleId, className: "font-semibold", style: { fontSize: "19px", lineHeight: "1.5", margin: "0 0 6px" }, children: "Are you over 18?" }),
       /* @__PURE__ */ jsx13("p", { className: "text-white/70", style: { fontSize: "13px", lineHeight: "1.5", margin: 0 }, children: "This link contains content for adults only. Please confirm you are 18 or older to continue." }),
       isPreview ? /* @__PURE__ */ jsx13("div", { className: "my-4 rounded-lg border border-white/20 p-4 text-sm text-white/70", children: "Cloudflare verification appears here on the live page. Preview only." }) : turnstileSiteKey ? /* @__PURE__ */ jsx13(TurnstileCheck, { siteKey: turnstileSiteKey, onToken: (value) => {
@@ -3011,10 +3019,13 @@ export {
   CreatorPageFlow,
   CreatorPrivacyPolicy,
   LandingPageViewer,
+  MAX_CREATOR_PRIVACY_POLICY_LENGTH,
   ModernAudioPlayer,
   appendCreatorJourneySearch,
   creatorDisplayName,
   creatorJourneySettings,
-  creatorUsesTwoPageFlow
+  creatorPrivacyPolicyText,
+  creatorUsesTwoPageFlow,
+  defaultCreatorPrivacyTemplate
 };
 //# sourceMappingURL=index.mjs.map
